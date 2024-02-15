@@ -13,8 +13,7 @@ how to :ref:`installation` the project.
 Contents
 --------
 
-.. toctree::
+.. autosummary::
+   :toctree: generated
 
-    build
-    usage
-    api
+   lumache
