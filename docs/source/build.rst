@@ -1,11 +1,18 @@
 How To Build App
 ===================================
+.. _buildpackage:
 
-**Dealer Apps**.
+Build
+------------
 
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
+Jalankan perintah ini pada terminal :
 
-.. note::
+.. code-block:: console
 
-   This project is under active development.
+    mvn install -f pom.xml
+
+Setelah selesai cek folder :
+
+.. code-block:: console
+
+    target/app
