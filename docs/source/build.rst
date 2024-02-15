@@ -21,5 +21,3 @@ hasil generate sudah bisa dibuat zip untuk update offline & online
 
 .. autosummary::
    :toctree: generated
-
-   lumache

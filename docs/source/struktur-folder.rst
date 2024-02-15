@@ -38,3 +38,8 @@ Struktur folder yang ditampilkan hanya untuk file-file yang sesuai dengan pengem
                             redemption.kt
                             subscription.kt
                             switching.kt
+
+
+
+.. autosummary::
+   :toctree: generated

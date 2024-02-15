@@ -16,3 +16,4 @@ Contents
 
     build
     api
+    struktur-folder
