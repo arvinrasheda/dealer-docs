@@ -15,4 +15,5 @@ Contents
 .. toctree::
 
     build
+    struktur-folder
     api
