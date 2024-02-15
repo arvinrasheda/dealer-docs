@@ -13,6 +13,7 @@ Struktur folder yang ditampilkan hanya untuk file-file yang sesuai dengan pengem
                 bips/
                     ...
                     model/
+                        ...
                         BankChargeItem.kt
                         CashBalance.kt
                         CustodianBank.kt
@@ -22,14 +23,13 @@ Struktur folder yang ditampilkan hanya untuk file-file yang sesuai dengan pengem
                         InquiryTransaction.kt
                         mutualfund.kt
                         MutualFundOrder.kt
-                        ...
                     data/
+                        ...
                         api.kt
                         webservice.kt
-                        ...
                     utils/
-                        MutualFundUtils.kt
                         ...
+                        MutualFundUtils.kt
                     view/
                         ...
                         mutualfund/
