@@ -15,6 +15,6 @@ Contents
 
 .. toctree::
 
+    build
     usage
     api
-    build

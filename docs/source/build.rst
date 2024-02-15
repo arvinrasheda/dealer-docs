@@ -16,3 +16,9 @@ Setelah selesai cek folder :
 .. code-block:: console
 
     target/app
+
+
+.. autosummary::
+   :toctree: generated
+
+   lumache
