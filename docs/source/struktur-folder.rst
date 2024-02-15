@@ -31,6 +31,7 @@ Struktur folder yang ditampilkan hanya untuk file-file yang sesuai dengan pengem
                         MutualFundUtils.kt
                         ...
                     view/
+                        ...
                         mutualfund/
                             bulkorderhistory.kt
                             bulksubscription.kt
