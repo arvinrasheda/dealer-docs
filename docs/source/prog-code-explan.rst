@@ -29,11 +29,11 @@ dibawah ini ngejelasan setiap tab nya gitu....
 -------
 
 Pada bagian subscription ini semua proses berada pada class ``Subsciption``, yang disimpan pada
-file :file:`subscription.kt`. Proses yang akan dijelaskan dari menambah *amount* reksadana (Add Product)
-sampai *submit*/*order* reksadana (Subscribe Product).
+file :file:`subscription.kt`. Proses yang akan dijelaskan dari menambah *amount* reksadana (*add mutual fund*)
+sampai *submit*/*order* reksadana (*subscribe mutual fund*).
 
 
-*Add Product*
+*Add Mutual Fund*
 ~~~~~~~
 *Function* yang digukanan untuk memasukkan *amount* reksadana yang ingin dibeli ialah menggunakan ``addProduct()``
 
@@ -346,7 +346,7 @@ Semua *function* yang berada pada ``taskBC.setOnSucceeded {...}`` akan dijelaska
 
 
 - *Function resetInputs()*
-    Terakhir fungsi ``resetInputs()`` berguna agar *input amount* dapat direset.
+    Terakhir fungsi ``resetInputs()`` berguna agar *input amount* direset ke 0.
 
     .. code-block:: kotlin
 
@@ -357,7 +357,7 @@ Semua *function* yang berada pada ``taskBC.setOnSucceeded {...}`` akan dijelaska
             }
         }
 
-*Subscribe Product*
+*Subscribe Mutual Fund*
 ~~~~~~~
 Proses *subscribe* dilakukan dengan menekan tombol *submit* dan akan mengekseskusi *function* ``order()``.
 
@@ -466,7 +466,7 @@ Setelah itu akan dilakukan validasi untuk pengecekan apakah data yang mau dikiri
 
 
 Menyimpan semua data untuk dikirim yang berada pada *function* ``setMutualFundOrders()``. Pada fungsi ini akan
-melakukan penyimapan data pada variabel ``fundOrders`` ke ``subscribeProducts``. Sebelum pemindahan dilakukan
+melakukan penyimapan data pada variabel ``fundOrders`` ke ``subscribeProducts``. Sebelum pemindahan dilakukan,
 data ``subscribeProducts`` akan dihapus terlebih dahulu ``subscribeProducts.clear()``.
 
 .. code-block:: kotlin
@@ -545,7 +545,7 @@ Menampilkan *loader indicator* pada layar.
     )
 
 
-Selanjutnya, request untuk *subscribe product*
+Selanjutnya, *request* untuk *subscribe product*
 
 .. code-block:: kotlin
 
@@ -580,6 +580,490 @@ Jika gagal, *loader indicator* akan dihilangkan dan menampilkan pesan *error* pa
 *Redemption*
 -------
 
+Untuk *redemption* semua proses berada pada *Redemption Class*, yang disimpan pada file ``redemption.kt``.
+Penjelasan setiap proses akan dimulai dari tambah reksadana (*add mutual fund*) sampai
+submit/redeem reksadana (*redeem mutual fund*).
+
+*Add Mutual Fund*
+~~~~~~~
+
+Proses menambahkan reksadana untuk dijual berada pada *function* ``addPortofolio()``, yang dapat dilihat pada *code*
+dibawah ini.
+
+.. code-block:: kotlin
+
+    class Redemption : Fragment("${AppProperties.appName} - Dealer Redemption Screen") {
+        //other code...
+        private fun addPortofolio() {
+            val portofolioItem = vm.portofolioProperty.value
+            val maxUnit = portofolioItem.unit.toDouble()
+            val maxUnitScaled = Formatter.setScale(maxUnit, Constant.DIGIT_COMMA_UNIT).toDouble()
+            val maxAmount = MutualFundUtils.getMaxPortofolioAmount(portofolioItem).roundToLong()
+            val minRedeem = portofolioItem.minRedem.toLong()
+
+            val dataToUpdate = fundOrders.find { it.fundCode == portofolioItem.fundCode }
+
+            val insertedUnit: Double
+            val insertedAmount: Long
+            if (dataToUpdate !== null) {
+                insertedUnit = dataToUpdate.unit.toDouble() + vm.unitProperty.value
+                insertedAmount = dataToUpdate.amount.toLong() + vm.amountProperty.value
+            } else {
+                insertedUnit = vm.unitProperty.value
+                insertedAmount = vm.amountProperty.value
+            }
+
+            val validator = Validator()
+                .rule(vm.unitProperty > 0.0, "Unit must grater than 0.0.")
+                .rule(vm.amountProperty > 0, "Amount must grater than 0.")
+                .rule(
+                    vm.amountProperty >= minRedeem,
+                    "Minimum amount of ${vm.portofolioProperty.value.fundName} is ${Formatter.numberFormat(minRedeem)}."
+                )
+                .rule(insertedUnit <= maxUnitScaled, "Maximum unit is ${Formatter.numberFormat(maxUnitScaled, Constant.DIGIT_COMMA_UNIT)} unit.")
+                .rule(insertedAmount <= maxAmount, "Amount must not grater than ${Formatter.numberFormat(maxAmount)}.")
+                .rule(
+                    !vm.accName.value.isNullOrBlank(),
+                    "Sorry, there is no Account Name."
+                )
+                .rule(
+                    !vm.rdnNumber.value.isNullOrBlank(),
+                    "Sorry, there is no RDN Number."
+                )
+                .rule(
+                    !vm.bankAcc.value.isNullOrBlank(),
+                    "Sorry, there is no Bank Account."
+                )
+                .validate()
+
+            if (!validator.isValid()) {
+                Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+                return
+            }
+
+            frgLoader.openModal(
+                stageStyle = StageStyle.TRANSPARENT,
+                modality = Modality.APPLICATION_MODAL,
+                escapeClosesWindow = false,
+                resizable = false,
+                owner = this@Redemption.currentWindow
+            )
+
+            val task = runAsync {
+                WebServiceData.fundByFundCode(portofolioItem.fundCode)
+            }
+
+            task.setOnSucceeded {
+                product = task.value!!
+
+                addPortofolioToTable()
+                updateSummaryTotalSection()
+
+                resetInputs()
+                frgLoader.close()
+            }
+
+            task.setOnFailed {
+                frgLoader.close()
+
+                val exception = task.exception
+                Alerts.errors("Mutual Fund By Fund Code: " + exception.message)
+            }
+        }
+    }
+
+
+Pertama, menentukan *local variable* untuk digunakan nanti pada proses selanjutnya.
+
+.. code-block:: kotlin
+
+    val portofolioItem = vm.portofolioProperty.value
+    val maxUnit = portofolioItem.unit.toDouble()
+    val maxUnitScaled = Formatter.setScale(maxUnit, Constant.DIGIT_COMMA_UNIT).toDouble()
+    val maxAmount = MutualFundUtils.getMaxPortofolioAmount(portofolioItem).roundToLong()
+    val minRedeem = portofolioItem.minRedem.toLong()
+
+    val dataToUpdate = fundOrders.find { it.fundCode == portofolioItem.fundCode }
+
+    val insertedUnit: Double
+    val insertedAmount: Long
+
+
+Melakukan pengecekan apakah reksadana sudah tersimpan atau belumm, untuk menentukan berapa banyak *unit* dan *amount*.
+
+.. code-block:: kotlin
+
+    if (dataToUpdate !== null) {
+        insertedUnit = dataToUpdate.unit.toDouble() + vm.unitProperty.value
+        insertedAmount = dataToUpdate.amount.toLong() + vm.amountProperty.value
+    } else {
+        insertedUnit = vm.unitProperty.value
+        insertedAmount = vm.amountProperty.value
+    }
+
+
+Melakukan validasi untuk mengecek apakah data yang dimasukkan sudah sesuai atau belum.
+Kalau belum proses ini akan diberhentikan.
+
+.. code-block:: kotlin
+
+    val validator = Validator()
+        .rule(vm.unitProperty > 0.0, "Unit must grater than 0.0.")
+        .rule(vm.amountProperty > 0, "Amount must grater than 0.")
+        .rule(
+            vm.amountProperty >= minRedeem,
+            "Minimum amount of ${vm.portofolioProperty.value.fundName} is ${Formatter.numberFormat(minRedeem)}."
+        )
+        .rule(insertedUnit <= maxUnitScaled, "Maximum unit is ${Formatter.numberFormat(maxUnitScaled, Constant.DIGIT_COMMA_UNIT)} unit.")
+        .rule(insertedAmount <= maxAmount, "Amount must not grater than ${Formatter.numberFormat(maxAmount)}.")
+        .rule(
+            !vm.accName.value.isNullOrBlank(),
+            "Sorry, there is no Account Name."
+        )
+        .rule(
+            !vm.rdnNumber.value.isNullOrBlank(),
+            "Sorry, there is no RDN Number."
+        )
+        .rule(
+            !vm.bankAcc.value.isNullOrBlank(),
+            "Sorry, there is no Bank Account."
+        )
+        .validate()
+
+    if (!validator.isValid()) {
+        Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+        return
+    }
+
+
+Menampilkan *loader indicator* pada layar.
+
+.. code-block:: kotlin
+
+    frgLoader.openModal(
+        stageStyle = StageStyle.TRANSPARENT,
+        modality = Modality.APPLICATION_MODAL,
+        escapeClosesWindow = false,
+        resizable = false,
+        owner = this@Redemption.currentWindow
+    )
+
+
+Mengambil data *mutual fund* untuk mengambil data *fee redemption*.
+
+.. code-block:: kotlin
+
+    val task = runAsync {
+        WebServiceData.fundByFundCode(portofolioItem.fundCode)
+    }
+
+
+Jika gagal mengambil data *mutual fund* akan menampilkan pesan *error*
+dan *loader indicator* dihilangkan ``frgLoader.close()``.
+
+.. code-block:: kotlin
+
+    task.setOnFailed {
+        frgLoader.close()
+
+        val exception = task.exception
+        Alerts.errors("Mutual Fund By Fund Code: " + exception.message)
+    }
+
+
+Kalau berhasil mengambil data *mutual fund* makan akan menyimpan reksadana pada tabel dan memperbaharui *summary section*.
+Setelah itu lanjut mereset *form input* sama *loader indicator* akan dihilangkan.
+
+.. code-block:: kotlin
+
+    task.setOnSucceeded {
+        product = task.value!!
+
+        addPortofolioToTable()
+        updateSummaryTotalSection()
+
+        resetInputs()
+        frgLoader.close()
+    }
+
+
+Berikut merupakan penjelasan setiap *function* yang berada pada *block* ``task.setOnSucceeded {...}``:
+
+- *addPortofolioToTable()*
+    *Function* ini berguna untuk menambahkan data reksadana yang mau dijual pada tabel. Data yang berada pada tabel
+    disimpan di *variable* ``fundOrders``. Proses penambahan data ini tidak langsung disimpan begitu saja, tetapi
+    melewati pengecekan terlebih dahulu.
+    Mengecek apakah reksadana sudah ada yang disimpan atau belum, seperti pada *code* ``if (dataToUpdate != null) {}``.
+    Jika reksadana kosong akan langsung disimpan, kalau tidak akan menghitung (unit_lama + unit_baru) dan
+    (amount_lama + amount_baru) untuk *update* reksadana nya.
+
+
+    .. code-block:: kotlin
+
+        class Redemption : Fragment("${AppProperties.appName} - Dealer Redemption Screen") {
+            //other code...
+            private fun addPortofolioToTable() {
+                val portofolioItem = vm.portofolioProperty.value
+
+                val unit: Double = vm.unitProperty.value
+                val amount: Long = vm.amountProperty.value
+                val feeRedm = product.feeRedm
+
+                val data = FundOrderRedm(
+                    fundCode =  portofolioItem.fundCode,
+                    fundName = portofolioItem.fundName,
+                    lastPrice = portofolioItem.lastPrice.toDouble(),
+                    trxFee = feeRedm.toDouble(),
+                    unit = unit,
+                    amount = amount,
+                    dealerFee = 0.0
+                )
+
+                val dataToUpdate = fundOrders.find { it.fundCode == portofolioItem.fundCode }
+
+                if (dataToUpdate != null) {
+                    data.unit = dataToUpdate.unit + unit
+                    data.amount = dataToUpdate.amount + amount
+
+                    fundOrders[fundOrders.indexOf(dataToUpdate)] = data
+                } else {
+                    fundOrders.add(data)
+                }
+            }
+        }
+
+
+- *updateSummaryTotalSection()*
+    Memiliki fungsi untuk memperbaharui *summary section*
+
+    .. code-block:: kotlin
+
+        class Redemption : Fragment("${AppProperties.appName} - Dealer Redemption Screen") {
+            //other code...
+            private fun updateSummaryTotalSection() {
+                vm.totalAmount.value = fundOrders.sumOf { it.amount.toLong() }
+
+                vm.totalTrxFee.value = fundOrders.map { (it.trxFee.toDouble() * it.amount.toDouble()) / 100 }
+                    .sumByLong { it.toLong() }
+
+                vm.totalDealerFee.value = fundOrders.map { (it.dealerFee.toDouble() * it.amount.toDouble()) / 100 }
+                    .sumByLong { it.toLong() }
+
+                vm.estTotalRedm.value = vm.totalAmount.value - vm.totalTrxFee.value - vm.totalDealerFee.value
+            }
+        }
+
+
+- *resetInputs()*
+    Berfungsi untuk *reset* *input unit* dan *amount* menjadi 0.
+
+    .. code-block:: kotlin
+
+        class Redemption : Fragment("${AppProperties.appName} - Dealer Redemption Screen") {
+            //other code...
+            private fun resetInputs() {
+                vm.unitProperty.set(0.0)
+                vm.amountProperty.set(0L)
+            }
+        }
+
+
+*Redeem Mutual Fund*
+~~~~~~~
+
+Proses penjualan reksadana dilakukan setelah tombol *submit* ditekan, dan akan menjalankan *function* ``redeem()``.
+
+.. code-block:: kotlin
+
+    class Redemption : Fragment("${AppProperties.appName} - Dealer Redemption Screen") {
+        //other code...
+        private fun redeem() {
+            val validator = Validator()
+                .rule(GlobalState.clientsAperdState.selectedClient != null, Constant.NO_CLIENT_SELECTED)
+                .rule(!fundOrders.isEmpty(), "Please add portfolio.")
+                .rule(
+                    !vm.accName.value.isNullOrBlank(),
+                    "Sorry, there is no Account Name."
+                )
+                .rule(
+                    !vm.rdnNumber.value.isNullOrBlank(),
+                    "Sorry, there is no RDN Number."
+                )
+                .rule(
+                    !vm.bankAcc.value.isNullOrBlank(),
+                    "Sorry, there is no Bank Account."
+                )
+                .validate()
+
+            if (!validator.isValid()) {
+                Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+                return
+            }
+
+            setMutualFundOrders()
+
+            alert(
+                Alert.AlertType.CONFIRMATION, "",
+                "Are you sure you want to redeem this mutual fund?", ButtonType.YES,
+                ButtonType.CANCEL, title = "Order Confirmation"
+            ) {
+                if (it == ButtonType.YES) {
+                    frgLoader.openModal(
+                        stageStyle = StageStyle.TRANSPARENT,
+                        modality = Modality.APPLICATION_MODAL,
+                        escapeClosesWindow = false,
+                        resizable = false,
+                        owner = this@Redemption.currentWindow
+                    )
+
+                    val task = runAsync { WebServiceData.redeem(redeemProducts) }
+
+                    task.setOnSucceeded {
+                        frgLoader.close()
+
+                        Alerts.information("Successfully redeem mutual fund")
+                        currentStage?.close()
+                    }
+
+                    task.setOnFailed {
+                        frgLoader.close()
+
+                        val exception = task.exception
+                        Alerts.errors(exception.message)
+                    }
+                }
+            }
+        }
+    }
+
+
+Bagian pertama melakukan validasi apakah data yang mau dikirim sudah sesuai atau belum.
+
+.. code-block:: kotlin
+
+    val validator = Validator()
+        .rule(GlobalState.clientsAperdState.selectedClient != null, Constant.NO_CLIENT_SELECTED)
+        .rule(!fundOrders.isEmpty(), "Please add portfolio.")
+        .rule(
+            !vm.accName.value.isNullOrBlank(),
+            "Sorry, there is no Account Name."
+        )
+        .rule(
+            !vm.rdnNumber.value.isNullOrBlank(),
+            "Sorry, there is no RDN Number."
+        )
+        .rule(
+            !vm.bankAcc.value.isNullOrBlank(),
+            "Sorry, there is no Bank Account."
+        )
+        .validate()
+
+    if (!validator.isValid()) {
+        Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+        return
+    }
+
+
+Menyimpan semua data untuk dikirim yang berada pada *function* ``setMutualFundOrders()``. Pada fungsi ini akan
+melakukan penyimpanan data pada variabel ``fundOrders`` ke ``redeemProducts``. Sebelum pemindahan dilakukan,
+data ``redeemProducts`` akan dihapus terlebih dahulu ``redeemProducts.clear()``.
+
+.. code-block:: kotlin
+
+    class Redemption : Fragment("${AppProperties.appName} - Dealer Redemption Screen") {
+        //other code...
+        private fun setMutualFundOrders() {
+            redeemProducts.clear()
+            fundOrders.forEach { fundOrder ->
+                val trxFeeNominal = (fundOrder.amount.toDouble() * fundOrder.trxFee.toDouble()) / 100
+                val dealerFeeNominal = (fundOrder.amount.toDouble() * fundOrder.dealerFee.toDouble()) / 100
+
+                val redeem = MutualFundOrder(
+                    transDate = DateAndTime.now(),
+                    transType = Constant.TRANS_TYPE_REDM,
+                    fundCode = fundOrder.fundCode,
+                    sid = userProfile.sid,
+                    qtyAmount = fundOrder.amount.toString(),
+                    qtyUnit = fundOrder.unit.toString(),
+                    lastNav = fundOrder.lastPrice.toString(),
+                    feeNominal = trxFeeNominal.roundToLong().toString(),
+                    feePersen = fundOrder.trxFee.toString(),
+                    feeNominalDealer = dealerFeeNominal.roundToLong().toString(),
+                    feePersenDealer = fundOrder.dealerFee.toString(),
+                    redmPaymentAccSeqCode = "",
+                    redmPaymentBicCode = "",
+                    redmPaymentAccNo = "",
+                    paymentDate = DateAndTime.now(),
+                    transferType = Constant.TRANS_TYPE_REDM,
+                    deviceId = Constant.DEVICE_ID_DESKTOP,
+                    dealerName = GlobalState.session.userId
+                )
+
+                redeemProducts.add(redeem)
+            }
+        }
+    }
+
+
+Menampilkan sebuah pesan konfirmasi sebelum melakukan penjualan reksadana. Jika user menekan tombol *Yes*
+proses *redemption* akan dilakukan.
+
+.. code-block:: kotlin
+
+    alert(
+        Alert.AlertType.CONFIRMATION, "",
+        "Are you sure you want to redeem this mutual fund?", ButtonType.YES,
+        ButtonType.CANCEL, title = "Order Confirmation"
+    ) {
+        if (it == ButtonType.YES) {
+            // code for handle redemption...
+        }
+    }
+
+
+Menampilkan *loader indicator* pada layar.
+
+.. code-block:: kotlin
+
+    frgLoader.openModal(
+        stageStyle = StageStyle.TRANSPARENT,
+        modality = Modality.APPLICATION_MODAL,
+        escapeClosesWindow = false,
+        resizable = false,
+        owner = this@Redemption.currentWindow
+    )
+
+
+Selanjutnya, *request* untuk *redemption*
+
+.. code-block:: kotlin
+
+    val task = runAsync { WebServiceData.redeem(redeemProducts) }
+
+
+Jika berhasil, *loader indicator* akan dihilangkan dan menampilkan pesan *success*.
+Setelah user *click* tombol *oke* atau *close*, layar *redemption* akan ditutup dengan ``currentStage?.close()``.
+
+.. code-block:: kotlin
+
+    task.setOnSucceeded {
+        frgLoader.close()
+
+        Alerts.information("Successfully redeem mutual fund")
+        currentStage?.close()
+    }
+
+
+Jika gagal, *loader indicator* akan dihilangkan dan menampilkan pesan *error* pada layar.
+
+.. code-block:: kotlin
+
+    task.setOnFailed {
+        frgLoader.close()
+
+        val exception = task.exception
+        Alerts.errors(exception.message)
+    }
 
 
 *Switching*
