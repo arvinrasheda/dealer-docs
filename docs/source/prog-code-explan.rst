@@ -689,7 +689,7 @@ Pertama, menentukan *local variable* untuk digunakan nanti pada proses selanjutn
     val insertedAmount: Long
 
 
-Melakukan pengecekan apakah reksadana sudah tersimpan atau belumm, untuk menentukan berapa banyak *unit* dan *amount*.
+Melakukan pengecekan apakah reksadana sudah tersimpan atau belum, agar dapat menentukan berapa banyak *unit* dan *amount*.
 
 .. code-block:: kotlin
 
@@ -771,7 +771,7 @@ dan *loader indicator* dihilangkan ``frgLoader.close()``.
     }
 
 
-Kalau berhasil mengambil data *mutual fund* makan akan menyimpan reksadana pada tabel dan memperbaharui *summary section*.
+Kalau berhasil mengambil data *mutual fund* maka akan menyimpan reksadana pada tabel dan memperbaharui *summary section*.
 Setelah itu lanjut mereset *form input* sama *loader indicator* akan dihilangkan.
 
 .. code-block:: kotlin
@@ -789,13 +789,13 @@ Setelah itu lanjut mereset *form input* sama *loader indicator* akan dihilangkan
 
 Berikut merupakan penjelasan setiap *function* yang berada pada *block* ``task.setOnSucceeded {...}``:
 
-- *addPortofolioToTable()*
+- *Function addPortofolioToTable()*
     *Function* ini berguna untuk menambahkan data reksadana yang mau dijual pada tabel. Data yang berada pada tabel
     disimpan di *variable* ``fundOrders``. Proses penambahan data ini tidak langsung disimpan begitu saja, tetapi
     melewati pengecekan terlebih dahulu.
     Mengecek apakah reksadana sudah ada yang disimpan atau belum, seperti pada *code* ``if (dataToUpdate != null) {}``.
-    Jika reksadana kosong akan langsung disimpan, kalau tidak akan menghitung (unit_lama + unit_baru) dan
-    (amount_lama + amount_baru) untuk *update* reksadana nya.
+    Jika reksadana kosong akan langsung disimpan, kalau tidak akan menghitung (``unit_lama`` + ``unit_baru``) dan
+    (``amount_lama`` + ``amount_baru``) untuk *update* reksadana nya.
 
 
     .. code-block:: kotlin
@@ -833,7 +833,7 @@ Berikut merupakan penjelasan setiap *function* yang berada pada *block* ``task.s
         }
 
 
-- *updateSummaryTotalSection()*
+- *Function updateSummaryTotalSection()*
     Memiliki fungsi untuk memperbaharui *summary section*
 
     .. code-block:: kotlin
@@ -854,7 +854,7 @@ Berikut merupakan penjelasan setiap *function* yang berada pada *block* ``task.s
         }
 
 
-- *resetInputs()*
+- *Function resetInputs()*
     Berfungsi untuk *reset* *input unit* dan *amount* menjadi 0.
 
     .. code-block:: kotlin
@@ -937,7 +937,7 @@ Proses penjualan reksadana dilakukan setelah tombol *submit* ditekan, dan akan m
     }
 
 
-Bagian pertama melakukan validasi apakah data yang mau dikirim sudah sesuai atau belum.
+Pertama yang dilakukan adalah validasi data apakah sudah sesuai atau belum.
 
 .. code-block:: kotlin
 
