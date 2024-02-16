@@ -582,7 +582,7 @@ Jika gagal, *loader indicator* akan dihilangkan dan menampilkan pesan *error* pa
 
 Untuk *redemption* semua proses berada pada *Redemption Class*, yang disimpan pada file ``redemption.kt``.
 Penjelasan setiap proses akan dimulai dari tambah reksadana (*add mutual fund*) sampai
-submit/redeem reksadana (*redeem mutual fund*).
+*submit*/*redeem* reksadana (*redeem mutual fund*).
 
 *Add Mutual Fund*
 ~~~~~~~
@@ -1069,6 +1069,364 @@ Jika gagal, *loader indicator* akan dihilangkan dan menampilkan pesan *error* pa
 *Switching*
 -------
 
+*Switching* berfungsi untuk memindahkan reksadana yang dimiliki kepada reksadana yang lain.
+Pada *Switching* semua proses berada pada *Switching Class*, yang disimpan pada file ``switching.kt``.
+Proses yang akan dijelaskan meliputi pemilihan *switching in*,
+tambah *switching in* (*add switching in*),
+dan *submit*/*switch* reksadana (*switch mutual fund*).
+
+*Choose Product To Switching In*
+~~~~~~~
+
+Memilih *Switching In Mutual Fund* dilakukan dengan menekan nama reksadana yang berada pada daftar reksadana dibawah
+*form add switching out*. Proses ini dilakukan dengan menggunakan *function* ``choosenProduct(fundCode: String)``,
+yang ditampilkan dibawah ini.
+
+.. code-block:: kotlin
+
+    class Switching : Fragment("${AppProperties.appName} - Dealer Switching Screen")  {
+        //other code...
+        private fun chosenProduct(fundCode: String) {
+            var added = true
+
+            if (
+                productIn.value.fundCode.isNotBlank() &&
+                productIn.value.fundCode !== fundCode
+            ) {
+                added = false
+                alert(
+                    Alert.AlertType.CONFIRMATION, "",
+                    "Are you sure you want to change your portfolio?", ButtonType.YES,
+                    ButtonType.CANCEL, title = "Confirmation"
+                ) {
+                    if (it == ButtonType.YES) {
+                        added = true
+                        resetForm()
+                    }
+                }
+            }
+
+            if (added) {
+                productIn.value = list.first { it.fundCode == fundCode }
+            }
+        }
+    }
+
+
+Pada fungsi di atas memiliki beberapa kondisi untuk menampilkan pesan konfirmasi penggantian data *switching in* , jika mau diganti.
+Kedua, kondisi untuk menambahkan data *switching in* yang telah dipilih.
+
+
+*Add Switching In*
+~~~~~~~
+
+Menentukan besaran nominal *amount* atau *unit* yang mau dilakukan pemindahan dengan menenkan tombol *Add*, lalu
+akan menjalankan *code* yang berada pada *function* ``addSwitchingIn()``
+
+.. code-block:: kotlin
+
+    class Switching : Fragment("${AppProperties.appName} - Dealer Switching Screen")  {
+        //other code...
+        private fun addSwitchingIn() {
+            val productIn = productIn.value
+
+            val portofolioItem = vm.portofolioProperty.value
+            val maxUnit = portofolioItem.unit.toDouble()
+            val maxUnitScaled = Formatter.setScale(maxUnit, Constant.DIGIT_COMMA_UNIT).toDouble()
+            val maxAmount = MutualFundUtils.getMaxPortofolioAmount(portofolioItem).roundToLong()
+
+            var minSubs = productIn.minSubs.toLongOrNull()
+            if (minSubs == null) {
+                minSubs = 0L
+            }
+
+            val nav = productIn.nav.toDoubleOrNull() ?: 0.0
+            val validator = Validator()
+                .rule(vm.unitProperty > 0.0, "Unit must grater than 0.")
+                .rule(vm.amountProperty > 0L, "Amount must grater than 0.")
+                .rule(vm.unitProperty.value <= maxUnitScaled, "Maximum unit is ${Formatter.numberFormat(maxUnitScaled)} unit.")
+                .rule(vm.amountProperty.value <= maxAmount, "Amount must not grater than ${Formatter.numberFormat(maxAmount)}.")
+                .rule(productIn.fundCode.isNotBlank(), "Please select product.")
+                .rule(productIn.fundCode.isBlank() || nav.roundToLong() > 0L, "Nav/Unit must be greater than 0.")
+                .rule(vm.amountProperty > minSubs, "Minimum transaction for ${productIn.fundName} is ${Formatter.numberFormat(minSubs)}.")
+                .validate()
+
+            if (!validator.isValid()) {
+                Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+                return
+            }
+
+            vm.switchingInTrxFee.value = productIn.feeSwitch.toDoubleOrNull() ?: 0.0
+
+            productInNotSelected.set(false)
+            updateSummaryTotalSection()
+        }
+    }
+
+
+Hal pertama yang dilakukan yaitu menentukan beberapa *local vaiables* terlebih dahulu.
+
+.. code-block:: kotlin
+
+    val productIn = productIn.value
+
+    val portofolioItem = vm.portofolioProperty.value
+    val maxUnit = portofolioItem.unit.toDouble()
+    val maxUnitScaled = Formatter.setScale(maxUnit, Constant.DIGIT_COMMA_UNIT).toDouble()
+    val maxAmount = MutualFundUtils.getMaxPortofolioAmount(portofolioItem).roundToLong()
+
+    var minSubs = productIn.minSubs.toLongOrNull()
+
+
+Selanjutnya, melakukan pengecekan pada ``minSubs`` apakah ``null`` atau tidak.
+Jika ``null`` maka nilai dari ``minSubs`` akan diganti menjadi 0.
+
+.. code-block:: kotlin
+
+    if (minSubs == null) {
+        minSubs = 0L
+    }
+
+
+Melakukan validasi agar data yang mau ditambahkan dicek terlebih dahulu benar atau tidak nya.
+
+.. code-block:: kotlin
+
+    val nav = productIn.nav.toDoubleOrNull() ?: 0.0
+    val validator = Validator()
+        .rule(vm.unitProperty > 0.0, "Unit must grater than 0.")
+        .rule(vm.amountProperty > 0L, "Amount must grater than 0.")
+        .rule(vm.unitProperty.value <= maxUnitScaled, "Maximum unit is ${Formatter.numberFormat(maxUnitScaled)} unit.")
+        .rule(vm.amountProperty.value <= maxAmount, "Amount must not grater than ${Formatter.numberFormat(maxAmount)}.")
+        .rule(productIn.fundCode.isNotBlank(), "Please select product.")
+        .rule(productIn.fundCode.isBlank() || nav.roundToLong() > 0L, "Nav/Unit must be greater than 0.")
+        .rule(vm.amountProperty > minSubs, "Minimum transaction for ${productIn.fundName} is ${Formatter.numberFormat(minSubs)}.")
+        .validate()
+
+    if (!validator.isValid()) {
+        Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+        return
+    }
+
+
+Selanjutnya menyimpan data *switching in transaction fee*
+
+.. code-block:: kotlin
+
+    vm.switchingInTrxFee.value = productIn.feeSwitch.toDoubleOrNull() ?: 0.0
+
+
+*Variable* ``productInNotSelected`` isi dengan *false*
+
+.. code-block:: kotlin
+
+    productInNotSelected.set(false)
+
+
+
+Terakhir, perbaharui *summary section* dengan menggunakan *function* ``updateSummaryTotalSection()``.
+
+.. code-block:: kotlin
+
+    class Switching : Fragment("${AppProperties.appName} - Dealer Switching Screen")  {
+        //other code...
+        private fun updateSummaryTotalSection() {
+            val totalTrxFee =  vm.switchingInTrxFee.value * vm.amountProperty.value.toDouble() / 100
+            vm.totalTrxFee.value = totalTrxFee.toLong()
+
+            val totalDealerFee = vm.dealerFee.value * vm.amountProperty.value.toDouble() / 100
+            vm.totalDealerFee.value = totalDealerFee.toLong()
+
+            updateUnit(vm.unitProperty.value, vm.amountProperty.value)
+            updateAmount(vm.amountProperty.value)
+        }
+
+        private fun addSwitchingIn() {
+            //other code..
+            updateSummaryTotalSection()
+        }
+    }
+
+
+*Switch Mutual Fund*
+~~~~~~~
+
+Melakukan *switch* reksadana dengan menekan tombol *submit*, dan akan menjalankan *function* ``switch()``.
+
+.. code-block:: kotlin
+
+    class Switching : Fragment("${AppProperties.appName} - Dealer Switching Screen")  {
+        //other code...
+        private fun switch() {
+            val validator = Validator()
+                .rule(vm.portofolioProperty.value.fundCode.isNotBlank(), "Sorry, no mutual fund is willing to exchange.")
+                .rule(productIn.value.fundCode.isNotBlank(), "Please select product.")
+                .rule(vm.unitTransfer.value > 0.0, "Unit transfer must grater than 0.")
+                .rule(vm.switchingOutAmount.value > 0L, "Switching out amount must grater than 0.")
+                .rule(vm.estUnitsEarned > 0.0, "Est. units earned must grater than 0.")
+                .rule(vm.estSwitchingInAmount > 0L, "Est. switching in amount must grater than 0.")
+                .rule(!userProfile.userId.isNullOrBlank(), "Sorry, there is no user profile for client name ${client.fullName}.")
+                .validate()
+
+            if (!validator.isValid()) {
+                Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+                return
+            }
+
+            setMutualFundOrderForSwitch()
+
+            alert(
+                Alert.AlertType.CONFIRMATION, "",
+                "Are you sure you want to switch this mutual fund?", ButtonType.YES,
+                ButtonType.CANCEL, title = "Order Confirmation"
+            ) {
+                if (it == ButtonType.YES) {
+                    frgLoader.openModal(
+                        stageStyle = StageStyle.TRANSPARENT,
+                        modality = Modality.APPLICATION_MODAL,
+                        escapeClosesWindow = false,
+                        resizable = false,
+                        owner = this@Switching.currentWindow
+                    )
+
+                    val task = runAsync { WebServiceData.switch(switchProducts) }
+
+                    task.setOnSucceeded {
+                        frgLoader.close()
+
+                        Alerts.information("Successfully switch mutual fund")
+                        currentStage?.close()
+                    }
+
+                    task.setOnFailed {
+                        frgLoader.close()
+
+                        val exception = task.exception
+                        Alerts.errors(exception.message)
+                    }
+                }
+            }
+        }
+    }
+
+
+Pertama yang dilakukan adalah validasi data apakah sudah sesuai atau belum.
+
+.. code-block:: kotlin
+
+    val validator = Validator()
+        .rule(vm.portofolioProperty.value.fundCode.isNotBlank(), "Sorry, no mutual fund is willing to exchange.")
+        .rule(productIn.value.fundCode.isNotBlank(), "Please select product.")
+        .rule(vm.unitTransfer.value > 0.0, "Unit transfer must grater than 0.")
+        .rule(vm.switchingOutAmount.value > 0L, "Switching out amount must grater than 0.")
+        .rule(vm.estUnitsEarned > 0.0, "Est. units earned must grater than 0.")
+        .rule(vm.estSwitchingInAmount > 0L, "Est. switching in amount must grater than 0.")
+        .rule(!userProfile.userId.isNullOrBlank(), "Sorry, there is no user profile for client name ${client.fullName}.")
+        .validate()
+
+    if (!validator.isValid()) {
+        Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+        return
+    }
+
+
+Menyimpan semua data untuk dikirim yang berada pada *function* ``setMutualFundOrderForSwitch()``. Pada fungsi ini akan
+melakukan penyimpanan data pada variabel ``switchProducts``. Sebelum penyimpanan dilakukan,
+data ``switchProducts`` akan dihapus terlebih dahulu ``switchProducts.clear()``.
+
+.. code-block:: kotlin
+
+    class Redemption : Fragment("${AppProperties.appName} - Dealer Redemption Screen") {
+        //other code...
+        private fun setMutualFundOrderForSwitch() {
+            switchProducts.clear()
+            val trxFeeNominalIn = (vm.amountProperty.value.toDouble() * vm.switchingInTrxFee.value) / 100
+            val dealerFeeNominal = (vm.amountProperty.value.toDouble() * vm.dealerFee.value) / 100
+
+            val switch = MutualFundOrder(
+                transDate = DateAndTime.now(),
+                transType = Constant.TRANS_TYPE_SWTC,
+                fundCodeOut = vm.productProperty.value.fundCode,
+                sid = userProfile.sid,
+                qtyAmountOut = qtyAmountOut,
+                qtyUnitOut = vm.unitTransfer.value.toString(),
+                lastNav = productIn.value.nav,
+                feeNominal = trxFeeNominalIn.roundToLong().toString(),
+                feePersen = vm.switchingInTrxFee.value,
+                feeNominalDealer = dealerFeeNominal.roundToLong().toString(),
+                feePersenDealer = vm.dealerFee.value.toString(),
+                switchingFeeCharge = productIn.value.feeSwitch,
+                paymentDate = DateAndTime.now(),
+                transferType = Constant.TRANS_TYPE_SWTC,
+                fundCodeIn = productIn.value.fundCode,
+                deviceId = Constant.DEVICE_ID_DESKTOP,
+                dealerName = GlobalState.session.userId
+            )
+
+            switchProducts.add(switch)
+        }
+    }
+
+
+Menampilkan sebuah pesan konfirmasi sebelum melakukan *switch* reksadana. Jika user menekan tombol *Yes*
+proses *switching* akan dilakukan.
+
+.. code-block:: kotlin
+
+    alert(
+        Alert.AlertType.CONFIRMATION, "",
+        "Are you sure you want to switch this mutual fund?", ButtonType.YES,
+        ButtonType.CANCEL, title = "Order Confirmation"
+    ) {
+        if (it == ButtonType.YES) {
+            // code for handle redemption...
+        }
+    }
+
+
+Menampilkan *loader indicator* pada layar.
+
+.. code-block:: kotlin
+
+    frgLoader.openModal(
+        stageStyle = StageStyle.TRANSPARENT,
+        modality = Modality.APPLICATION_MODAL,
+        escapeClosesWindow = false,
+        resizable = false,
+        owner = this@Switching.currentWindow
+    )
+
+
+Selanjutnya, *request* untuk *switching*
+
+.. code-block:: kotlin
+
+    val task = runAsync { WebServiceData.switch(switchProducts) }
+
+
+Jika berhasil, *loader indicator* akan dihilangkan dan menampilkan pesan *success*.
+Setelah user *click* tombol *oke* atau *close*, layar *switching* akan ditutup dengan ``currentStage?.close()``.
+
+.. code-block:: kotlin
+
+    task.setOnSucceeded {
+        frgLoader.close()
+
+        Alerts.information("Successfully switch mutual fund")
+        currentStage?.close()
+    }
+
+
+Jika gagal, *loader indicator* akan dihilangkan dan menampilkan pesan *error* pada layar.
+
+.. code-block:: kotlin
+
+    task.setOnFailed {
+        frgLoader.close()
+
+        val exception = task.exception
+        Alerts.errors(exception.message)
+    }
 
 
 
