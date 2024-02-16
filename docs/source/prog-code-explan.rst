@@ -673,7 +673,7 @@ dibawah ini.
     }
 
 
-Pertama, menentukan *local variable* untuk digunakan nanti pada proses selanjutnya.
+Pertama, menentukan beberapa *local variables* untuk digunakan nanti pada proses selanjutnya.
 
 .. code-block:: kotlin
 
@@ -793,7 +793,7 @@ Berikut merupakan penjelasan setiap *function* yang berada pada *block* ``task.s
     *Function* ini berguna untuk menambahkan data reksadana yang mau dijual pada tabel. Data yang berada pada tabel
     disimpan di *variable* ``fundOrders``. Proses penambahan data ini tidak langsung disimpan begitu saja, tetapi
     melewati pengecekan terlebih dahulu.
-    Mengecek apakah reksadana sudah ada yang disimpan atau belum, seperti pada *code* ``if (dataToUpdate != null) {}``.
+    Apakah reksadana sudah ada yang disimpan atau belum, seperti pada *code* ``if (dataToUpdate != null) {}``.
     Jika reksadana kosong akan langsung disimpan, kalau tidak akan menghitung (``unit_lama`` + ``unit_baru``) dan
     (``amount_lama`` + ``amount_baru``) untuk *update* reksadana nya.
 
