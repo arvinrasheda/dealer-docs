@@ -279,7 +279,7 @@ menggunakan *method* ``addProductToTable()``, dan juga *summary section* akan di
 
 Semua *function* yang berada pada ``taskBC.setOnSucceeded {...}`` akan dijelaskan dengan detail sebagai berikut:
 
-- *Function AddProductToTable()*
+#. *Function AddProductToTable()*
     Fungsi ini digunakan untuk menyimpan reksadana yang sudah ditambahkan pada tabel, atau dalam variable ``fundOrders``.
     Sebelum disimpan data harus dicek terlebih dahulu apakah sudah tersedia atau belum. Jika sudah ada, data tidak akan
     ditambahkan melainkan hanya memperbaharui jumlah *amount* (``amount_lama`` + ``amount_baru``), *bank charge* dan
@@ -320,7 +320,7 @@ Semua *function* yang berada pada ``taskBC.setOnSucceeded {...}`` akan dijelaska
         }
 
 
-- *Function updateSummaryTotalSection()*
+#. *Function updateSummaryTotalSection()*
     Selanjutnya fungsi ``updateSummaryTotalSection()`` berguna untuk memperbaharui *summary section* pada layar
     subscription.
 
@@ -345,7 +345,7 @@ Semua *function* yang berada pada ``taskBC.setOnSucceeded {...}`` akan dijelaska
         }
 
 
-- *Function resetInputs()*
+#. *Function resetInputs()*
     Terakhir fungsi ``resetInputs()`` berguna agar *input amount* direset ke 0.
 
     .. code-block:: kotlin
@@ -789,7 +789,7 @@ Setelah itu lanjut mereset *form input* sama *loader indicator* akan dihilangkan
 
 Berikut merupakan penjelasan setiap *function* yang berada pada *block* ``task.setOnSucceeded {...}``:
 
-- *Function addPortofolioToTable()*
+#. *Function addPortofolioToTable()*
     *Function* ini berguna untuk menambahkan data reksadana yang mau dijual pada tabel. Data yang berada pada tabel
     disimpan di *variable* ``fundOrders``. Proses penambahan data ini tidak langsung disimpan begitu saja, tetapi
     melewati pengecekan terlebih dahulu.
@@ -833,7 +833,7 @@ Berikut merupakan penjelasan setiap *function* yang berada pada *block* ``task.s
         }
 
 
-- *Function updateSummaryTotalSection()*
+#. *Function updateSummaryTotalSection()*
     Memiliki fungsi untuk memperbaharui *summary section*
 
     .. code-block:: kotlin
@@ -854,7 +854,7 @@ Berikut merupakan penjelasan setiap *function* yang berada pada *block* ``task.s
         }
 
 
-- *Function resetInputs()*
+#. *Function resetInputs()*
     Berfungsi untuk *reset* *input unit* dan *amount* menjadi 0.
 
     .. code-block:: kotlin
