@@ -1,9 +1,9 @@
 Penjelasan Kode Program APERD Dealer Desktop
-===================================
+=======
 
 
 Mutual Fund Screen
-=======
+-------
 
 penjelasan bagian layar ini itu apa....
 
@@ -33,13 +33,13 @@ Transaction History
 
 
 Subscription
-=======
+-------
 
 Pada bagian subscription ini semua proses berada pada class ``Subsciption``, yang disimpan pada file :file:`subscription.kt`. Proses yang akan dijelaskan dari menambah *amount* reksadana sampai *submit*/*order* reksadana.
 
 
 Add Product
--------
+~~~~~~~
 Pertama, untuk dapat memasukkan jumlah nominal reksadana yang ingin dibeli dengan menggunakan fungsi ``addProduct()``
 
 .. code-block:: kotlin
@@ -210,7 +210,7 @@ Proses penambahan jumlah nominal diawali dengan mengambil data *custodian bank* 
     val taskCB = runAsync { WebServiceData.custodianBankByFundCode(product.fundCode) }
 
 
-Kalau gagal akan menampilkan *alert errors* dan *loader indicator* ``frgLoader.close()`` dihilangkan.
+Kalau gagal akan menampilkan *alert errors* dan *loader indicator* dihilangkan ``frgLoader.close()``.
 
 .. code-block:: kotlin
 
@@ -278,7 +278,7 @@ Setelah berhasil mengambil data *bank charge*, harus dicek terlebih dahulu. Kala
 
 
 Fungsi AddProductToTable()
-~~~~~~~
+*******
 
 Fungsi ini digunakan untuk menyimpan reksadana yang sudah ditambahkan pada tabel, atau dalam variable ``fundOrders``. Sebelum disimpan data harus dicek terlebih dahulu apakah sudah tersedia atau belum. Jika sudah ada, data tidak akan ditambahkan melainkan hanya memperbaharui jumlah *amount* (``amount_lama`` + ``amount_baru``), *bank charge* dan *custodian bank*. Jika tidak ada, maka data akan ditambahkan pada tabel.
 
@@ -319,7 +319,7 @@ Fungsi ini digunakan untuk menyimpan reksadana yang sudah ditambahkan pada tabel
 
 
 Fungsi updateSummaryTotalSection()
-~~~~~~~
+*******
 
 Selanjutnya fungsi ``updateSummaryTotalSection()`` berguna untuk memperbaharui *summary section* pada layar subscription.
 
@@ -345,7 +345,7 @@ Selanjutnya fungsi ``updateSummaryTotalSection()`` berguna untuk memperbaharui *
 
 
 Fungsi resetInputs()
-~~~~~~~
+*******
 
 Terakhir fungsi ``resetInputs()`` berguna agar *input amount* dapat direset.
 
@@ -359,7 +359,7 @@ Terakhir fungsi ``resetInputs()`` berguna agar *input amount* dapat direset.
     }
 
 Subscribe Product
--------
+~~~~~~~
 Proses *subscribe* dilakukan dengan menekan tombol *submit* dan akan mengekseskusi *function* ``order()``.
 
 .. code-block:: kotlin
@@ -525,7 +525,7 @@ Jika gagal, *loader indicator* akan dihilangkan dan menampilkan pesan *error* pa
 
 
 Fungsi setMutualFundOrders()
-~~~~~~~
+*******
 
 Pada fungsi ini akan melakukan penyimapan data pada variabel ``fundOrders`` ke ``subscribeProducts``. Sebelum pemindahan dilakukan data ``subscribeProducts`` akan dihapus terlebih dahulu ``subscribeProducts.clear()``.
 
@@ -579,23 +579,23 @@ Pada fungsi ini akan melakukan penyimapan data pada variabel ``fundOrders`` ke `
 
 
 Redemption
-=======
+-------
 
 
 
 Switching
-=======
+-------
 
 
 
 
 Bulk Order
-=======
+-------
 
 
 
 Bulk Order History
-=======
+-------
 
 
 
