@@ -1379,7 +1379,7 @@ proses *switching* akan dilakukan.
         ButtonType.CANCEL, title = "Order Confirmation"
     ) {
         if (it == ButtonType.YES) {
-            // code for handle redemption...
+            // code for handle switching...
         }
     }
 
