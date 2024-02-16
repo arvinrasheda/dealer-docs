@@ -280,78 +280,78 @@ Setelah berhasil mengambil data *bank charge*, harus dicek terlebih dahulu. Kala
 Semua *function* yang berada pada ``taskBC.setOnSucceeded {...}`` akan dijelaskan dengan detail sebagai berikut:
 
 - *Function AddProductToTable()*
-    Fungsi ini digunakan untuk menyimpan reksadana yang sudah ditambahkan pada tabel, atau dalam variable ``fundOrders``. Sebelum disimpan data harus dicek terlebih dahulu apakah sudah tersedia atau belum. Jika sudah ada, data tidak akan ditambahkan melainkan hanya memperbaharui jumlah *amount* (``amount_lama`` + ``amount_baru``), *bank charge* dan *custodian bank*. Jika tidak ada, maka data akan ditambahkan pada tabel.
+Fungsi ini digunakan untuk menyimpan reksadana yang sudah ditambahkan pada tabel, atau dalam variable ``fundOrders``. Sebelum disimpan data harus dicek terlebih dahulu apakah sudah tersedia atau belum. Jika sudah ada, data tidak akan ditambahkan melainkan hanya memperbaharui jumlah *amount* (``amount_lama`` + ``amount_baru``), *bank charge* dan *custodian bank*. Jika tidak ada, maka data akan ditambahkan pada tabel.
 
-    .. code-block:: kotlin
+.. code-block:: kotlin
 
-        class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
-            // other code...
-            private fun addProductToTable() {
-                val product = vm.productProperty.value
-                val feeSubs = product.feeSubs.toDoubleOrNull() ?: 0.0
+    class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
+        // other code...
+        private fun addProductToTable() {
+            val product = vm.productProperty.value
+            val feeSubs = product.feeSubs.toDoubleOrNull() ?: 0.0
 
-                val dataToUpdate = fundOrders.find { it.fundCode == product.fundCode }
-                vm.amount += dataToUpdate?.amount ?: 0L
+            val dataToUpdate = fundOrders.find { it.fundCode == product.fundCode }
+            vm.amount += dataToUpdate?.amount ?: 0L
 
-                val data = FundOrderSubs(
-                    fundCode = product.fundCode,
-                    fundName = product.fundName,
-                    lastPrice = product.nav.toDouble(),
-                    amount = vm.amount,
-                    trxFee = feeSubs,
-                    unit = vm.amount.toDouble() / product.nav.toDouble(),
-                    dealerFee = 0.0,
-                    bankChargeItem = bankChargeItem
-                )
+            val data = FundOrderSubs(
+                fundCode = product.fundCode,
+                fundName = product.fundName,
+                lastPrice = product.nav.toDouble(),
+                amount = vm.amount,
+                trxFee = feeSubs,
+                unit = vm.amount.toDouble() / product.nav.toDouble(),
+                dealerFee = 0.0,
+                bankChargeItem = bankChargeItem
+            )
 
-                if (!custodianBanks.isEmpty()) {
-                    data.cb = custodianBanks[0]
-                }
+            if (!custodianBanks.isEmpty()) {
+                data.cb = custodianBanks[0]
+            }
 
-                if (dataToUpdate != null) {
-                    fundOrders[fundOrders.indexOf(dataToUpdate)] = data
-                } else {
-                    fundOrders.add(data)
-                }
+            if (dataToUpdate != null) {
+                fundOrders[fundOrders.indexOf(dataToUpdate)] = data
+            } else {
+                fundOrders.add(data)
             }
         }
+    }
 
 
 - *Function updateSummaryTotalSection()*
-    Selanjutnya fungsi ``updateSummaryTotalSection()`` berguna untuk memperbaharui *summary section* pada layar subscription.
+Selanjutnya fungsi ``updateSummaryTotalSection()`` berguna untuk memperbaharui *summary section* pada layar subscription.
 
-    .. code-block:: kotlin
+.. code-block:: kotlin
 
-        class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
-            // other code...
-            private fun updateSummaryTotalSection() {
-                vm.totalAmount.value = fundOrders.sumByLong { it.amount }
+    class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
+        // other code...
+        private fun updateSummaryTotalSection() {
+            vm.totalAmount.value = fundOrders.sumByLong { it.amount }
 
-                vm.totalTrxFee.value = fundOrders.map { (it.trxFee * it.amount.toDouble()) / 100 }
-                    .sumByLong { it.toLong() }
+            vm.totalTrxFee.value = fundOrders.map { (it.trxFee * it.amount.toDouble()) / 100 }
+                .sumByLong { it.toLong() }
 
-                vm.totalDealerFee.value = fundOrders.map { (it.dealerFee * it.amount.toDouble()) / 100 }
-                    .sumByLong { it.toLong() }
+            vm.totalDealerFee.value = fundOrders.map { (it.dealerFee * it.amount.toDouble()) / 100 }
+                .sumByLong { it.toLong() }
 
-                vm.totalBc.value = fundOrders.map { it.bankChargeItem.bankCharge.toDoubleOrNull() ?: 0.0 }
-                    .sumOf { it.roundToLong() }
+            vm.totalBc.value = fundOrders.map { it.bankChargeItem.bankCharge.toDoubleOrNull() ?: 0.0 }
+                .sumOf { it.roundToLong() }
 
-                vm.grandTotal.value = vm.totalAmount.value + vm.totalTrxFee.value + vm.totalDealerFee.value + vm.totalBc.value
-            }
+            vm.grandTotal.value = vm.totalAmount.value + vm.totalTrxFee.value + vm.totalDealerFee.value + vm.totalBc.value
         }
+    }
 
 
 - *Function resetInputs()*
-    Terakhir fungsi ``resetInputs()`` berguna agar *input amount* dapat direset.
+Terakhir fungsi ``resetInputs()`` berguna agar *input amount* dapat direset.
 
-    .. code-block:: kotlin
+.. code-block:: kotlin
 
-        class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
-            // other code...
-            private fun resetInputs() {
-                vm.amount = 0
-            }
+    class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
+        // other code...
+        private fun resetInputs() {
+            vm.amount = 0
         }
+    }
 
 *Subscribe Product*
 ~~~~~~~
@@ -541,7 +541,7 @@ Selanjutnya, request untuk *subscribe product*
     val task = runAsync { WebServiceData.subscribe(subscribeProducts) }
 
 
-Jika berhasil, *loader indicator* akan dihilangkan dan menampilkan pesan *success*. Setelah user *click* tombol *oke* atau *close*, layar subscription akan ditutup dengan ``currentStage?.close()``.
+Jika berhasil, *loader indicator* akan dihilangkan dan menampilkan pesan *success*. Setelah user *click* tombol *oke* atau *close*, layar *subscription* akan ditutup dengan ``currentStage?.close()``.
 
 .. code-block:: kotlin
 
