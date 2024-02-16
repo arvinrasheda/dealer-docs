@@ -1121,7 +1121,7 @@ Kedua, kondisi untuk menambahkan data *switching in* yang telah dipilih.
 ~~~~~~~
 
 Menentukan besaran nominal *amount* atau *unit* reksadana (*switching out*) yang mau dipindahkan dengan
-menenkan tombol *Add*, lalu akan menjalankan *code* yang berada pada *function* ``addSwitchingIn()``
+menekan tombol *Add*, lalu akan menjalankan *code* yang berada pada *function* ``addSwitchingIn()``
 
 .. code-block:: kotlin
 
