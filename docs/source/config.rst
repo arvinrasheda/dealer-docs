@@ -18,7 +18,7 @@ Config untuk disable dan enable Dealer Fee APERD (default: false ):
 Config untuk update package offline
 ----------------
 
-arahkan uri update ``app/DX-TRADE.cfg `` ke folder ``update`` hasil download:
+arahkan uri update ``app/DX-TRADE.cfg ``  ke folder  ``update`` hasil download:
 
 .. code-block:: console
 
