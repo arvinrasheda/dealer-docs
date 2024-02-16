@@ -14,7 +14,7 @@ Penjelasan mengambil client dulu.....
 dibawah ini ngejelasan setiap tab nya gitu....
 
 Product List
--------
+~~~~~~~
 
 Menampilkan seluruh reksadana yang tersedia dan yang dimiliki oleh client. Sebelum menampilkan daftar reksadana harus memilih client terlebih dahulu.
 
@@ -23,12 +23,12 @@ Menampilkan seluruh reksadana yang tersedia dan yang dimiliki oleh client. Sebel
 
 
 Portfolio  List
--------
+~~~~~~~
 
 
 
 Transaction History
--------
+~~~~~~~
 
 
 
