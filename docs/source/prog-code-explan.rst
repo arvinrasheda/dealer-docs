@@ -16,26 +16,21 @@ dibawah ini ngejelasan setiap tab nya gitu....
 *Product List*
 ~~~~~~~
 
-Menampilkan seluruh reksadana yang tersedia dan yang dimiliki oleh client. Sebelum menampilkan daftar reksadana harus memilih client terlebih dahulu.
-
-
-
-
 
 *Portfolio  List*
 ~~~~~~~
-
 
 
 *Transaction History*
 ~~~~~~~
 
 
-
 *Subscription*
 -------
 
-Pada bagian subscription ini semua proses berada pada class ``Subsciption``, yang disimpan pada file :file:`subscription.kt`. Proses yang akan dijelaskan dari menambah *amount* reksadana (Add Product) sampai *submit*/*order* reksadana (Subscribe Product).
+Pada bagian subscription ini semua proses berada pada class ``Subsciption``, yang disimpan pada
+file :file:`subscription.kt`. Proses yang akan dijelaskan dari menambah *amount* reksadana (Add Product)
+sampai *submit*/*order* reksadana (Subscribe Product).
 
 
 *Add Product*
@@ -221,7 +216,9 @@ Kalau gagal akan menampilkan pesan *errors* dan *loader indicator* dihilangkan `
         Alerts.errors("Custodian Bank: " + exception.message)
     }
 
-Jika sukses mengambil data *custodian bank*, akan dilanjutkan untuk mengambil data *bank charge*. Sebelum mengambil data *bank charge* harus dicek *null* tidak nya *custodian bank*. Jika berhasil, proses dilanjutkan dan kalau gagal akan menampilkan pesan *error* pada layar.
+Jika sukses mengambil data *custodian bank*, akan dilanjutkan untuk mengambil data *bank charge*.
+Sebelum mengambil data *bank charge* harus dicek *null* tidak nya *custodian bank*.
+Jika berhasil, proses dilanjutkan dan kalau gagal akan menampilkan pesan *error* pada layar.
 
 .. code-block:: kotlin
 
@@ -257,7 +254,10 @@ Kalau gagal mengambil data *bank charge* akan menampilkan *alert errors* dan *lo
     }
 
 
-Setelah berhasil mengambil data *bank charge*, harus dicek terlebih dahulu. Kalau tidak ``null`` akan disimpan pada variable ``bankChargeItem``, supaya data *bank charge* dapat disimpan. Selanjutnya, reksadana akan disimpan dengan menggunakan *method* ``addProductToTable()``, dan juga *summary section* akan diperbaharui dengan ``updateSummaryTotalSection()``. Tidak lupa *form* direset ``resetInputs()`` dan *loader indicator* di hilangkan.
+Setelah berhasil mengambil data *bank charge*, harus dicek terlebih dahulu. Kalau tidak ``null`` akan disimpan pada
+variable ``bankChargeItem``, supaya data *bank charge* dapat disimpan. Selanjutnya, reksadana akan disimpan dengan
+menggunakan *method* ``addProductToTable()``, dan juga *summary section* akan diperbaharui dengan
+``updateSummaryTotalSection()``. Tidak lupa *form* direset ``resetInputs()`` dan *loader indicator* di hilangkan.
 
 .. code-block:: kotlin
 
@@ -280,78 +280,82 @@ Setelah berhasil mengambil data *bank charge*, harus dicek terlebih dahulu. Kala
 Semua *function* yang berada pada ``taskBC.setOnSucceeded {...}`` akan dijelaskan dengan detail sebagai berikut:
 
 - *Function AddProductToTable()*
-Fungsi ini digunakan untuk menyimpan reksadana yang sudah ditambahkan pada tabel, atau dalam variable ``fundOrders``. Sebelum disimpan data harus dicek terlebih dahulu apakah sudah tersedia atau belum. Jika sudah ada, data tidak akan ditambahkan melainkan hanya memperbaharui jumlah *amount* (``amount_lama`` + ``amount_baru``), *bank charge* dan *custodian bank*. Jika tidak ada, maka data akan ditambahkan pada tabel.
+    Fungsi ini digunakan untuk menyimpan reksadana yang sudah ditambahkan pada tabel, atau dalam variable ``fundOrders``.
+    Sebelum disimpan data harus dicek terlebih dahulu apakah sudah tersedia atau belum. Jika sudah ada, data tidak akan
+    ditambahkan melainkan hanya memperbaharui jumlah *amount* (``amount_lama`` + ``amount_baru``), *bank charge* dan
+    *custodian bank*. Jika tidak ada, maka data akan ditambahkan pada tabel.
 
-.. code-block:: kotlin
+    .. code-block:: kotlin
 
-    class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
-        // other code...
-        private fun addProductToTable() {
-            val product = vm.productProperty.value
-            val feeSubs = product.feeSubs.toDoubleOrNull() ?: 0.0
+        class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
+            // other code...
+            private fun addProductToTable() {
+                val product = vm.productProperty.value
+                val feeSubs = product.feeSubs.toDoubleOrNull() ?: 0.0
 
-            val dataToUpdate = fundOrders.find { it.fundCode == product.fundCode }
-            vm.amount += dataToUpdate?.amount ?: 0L
+                val dataToUpdate = fundOrders.find { it.fundCode == product.fundCode }
+                vm.amount += dataToUpdate?.amount ?: 0L
 
-            val data = FundOrderSubs(
-                fundCode = product.fundCode,
-                fundName = product.fundName,
-                lastPrice = product.nav.toDouble(),
-                amount = vm.amount,
-                trxFee = feeSubs,
-                unit = vm.amount.toDouble() / product.nav.toDouble(),
-                dealerFee = 0.0,
-                bankChargeItem = bankChargeItem
-            )
+                val data = FundOrderSubs(
+                    fundCode = product.fundCode,
+                    fundName = product.fundName,
+                    lastPrice = product.nav.toDouble(),
+                    amount = vm.amount,
+                    trxFee = feeSubs,
+                    unit = vm.amount.toDouble() / product.nav.toDouble(),
+                    dealerFee = 0.0,
+                    bankChargeItem = bankChargeItem
+                )
 
-            if (!custodianBanks.isEmpty()) {
-                data.cb = custodianBanks[0]
-            }
+                if (!custodianBanks.isEmpty()) {
+                    data.cb = custodianBanks[0]
+                }
 
-            if (dataToUpdate != null) {
-                fundOrders[fundOrders.indexOf(dataToUpdate)] = data
-            } else {
-                fundOrders.add(data)
+                if (dataToUpdate != null) {
+                    fundOrders[fundOrders.indexOf(dataToUpdate)] = data
+                } else {
+                    fundOrders.add(data)
+                }
             }
         }
-    }
 
 
 - *Function updateSummaryTotalSection()*
-Selanjutnya fungsi ``updateSummaryTotalSection()`` berguna untuk memperbaharui *summary section* pada layar subscription.
+    Selanjutnya fungsi ``updateSummaryTotalSection()`` berguna untuk memperbaharui *summary section* pada layar
+    subscription.
 
-.. code-block:: kotlin
+    .. code-block:: kotlin
 
-    class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
-        // other code...
-        private fun updateSummaryTotalSection() {
-            vm.totalAmount.value = fundOrders.sumByLong { it.amount }
+        class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
+            // other code...
+            private fun updateSummaryTotalSection() {
+                vm.totalAmount.value = fundOrders.sumByLong { it.amount }
 
-            vm.totalTrxFee.value = fundOrders.map { (it.trxFee * it.amount.toDouble()) / 100 }
-                .sumByLong { it.toLong() }
+                vm.totalTrxFee.value = fundOrders.map { (it.trxFee * it.amount.toDouble()) / 100 }
+                    .sumByLong { it.toLong() }
 
-            vm.totalDealerFee.value = fundOrders.map { (it.dealerFee * it.amount.toDouble()) / 100 }
-                .sumByLong { it.toLong() }
+                vm.totalDealerFee.value = fundOrders.map { (it.dealerFee * it.amount.toDouble()) / 100 }
+                    .sumByLong { it.toLong() }
 
-            vm.totalBc.value = fundOrders.map { it.bankChargeItem.bankCharge.toDoubleOrNull() ?: 0.0 }
-                .sumOf { it.roundToLong() }
+                vm.totalBc.value = fundOrders.map { it.bankChargeItem.bankCharge.toDoubleOrNull() ?: 0.0 }
+                    .sumOf { it.roundToLong() }
 
-            vm.grandTotal.value = vm.totalAmount.value + vm.totalTrxFee.value + vm.totalDealerFee.value + vm.totalBc.value
+                vm.grandTotal.value = vm.totalAmount.value + vm.totalTrxFee.value + vm.totalDealerFee.value + vm.totalBc.value
+            }
         }
-    }
 
 
 - *Function resetInputs()*
-Terakhir fungsi ``resetInputs()`` berguna agar *input amount* dapat direset.
+    Terakhir fungsi ``resetInputs()`` berguna agar *input amount* dapat direset.
 
-.. code-block:: kotlin
+    .. code-block:: kotlin
 
-    class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
-        // other code...
-        private fun resetInputs() {
-            vm.amount = 0
+        class Subscription : Fragment("${AppProperties.appName} - Dealer Subscription Screen")  {
+            // other code...
+            private fun resetInputs() {
+                vm.amount = 0
+            }
         }
-    }
 
 *Subscribe Product*
 ~~~~~~~
@@ -391,7 +395,9 @@ Proses *subscribe* dilakukan dengan menekan tombol *submit* dan akan mengeksesku
 
             setMutualFundOrders()
 
-            alert(Alert.AlertType.CONFIRMATION, "", "Are you sure you want to subscribe this mutual fund?", ButtonType.YES, ButtonType.CANCEL, title = "Order Confirmation") {
+            alert(Alert.AlertType.CONFIRMATION, "", "Are you sure you want to subscribe this mutual fund?",
+                ButtonType.YES, ButtonType.CANCEL, title = "Order Confirmation"
+            ) {
                 if (it == ButtonType.YES) {
                     frgLoader.openModal(
                         stageStyle = StageStyle.TRANSPARENT,
@@ -459,7 +465,9 @@ Setelah itu akan dilakukan validasi untuk pengecekan apakah data yang mau dikiri
     }
 
 
-Menyimpan semua data untuk dikirim yang berada pada *function* ``setMutualFundOrders()``. Pada fungsi ini akan melakukan penyimapan data pada variabel ``fundOrders`` ke ``subscribeProducts``. Sebelum pemindahan dilakukan data ``subscribeProducts`` akan dihapus terlebih dahulu ``subscribeProducts.clear()``.
+Menyimpan semua data untuk dikirim yang berada pada *function* ``setMutualFundOrders()``. Pada fungsi ini akan
+melakukan penyimapan data pada variabel ``fundOrders`` ke ``subscribeProducts``. Sebelum pemindahan dilakukan
+data ``subscribeProducts`` akan dihapus terlebih dahulu ``subscribeProducts.clear()``.
 
 .. code-block:: kotlin
 
@@ -510,11 +518,14 @@ Menyimpan semua data untuk dikirim yang berada pada *function* ``setMutualFundOr
     }
 
 
-Menampilkan sebuah pesan konfirmasi sebelum melakukan pembelian reksdana. Jika user menekan tombol *Yes* proses *subscribe product* akan dilakukan.
+Menampilkan sebuah pesan konfirmasi sebelum melakukan pembelian reksdana. Jika user menekan tombol *Yes*
+proses *subscribe product* akan dilakukan.
 
 .. code-block:: kotlin
 
-    alert(Alert.AlertType.CONFIRMATION, "", "Are you sure you want to subscribe this mutual fund?", ButtonType.YES, ButtonType.CANCEL, title = "Order Confirmation") {
+    alert(Alert.AlertType.CONFIRMATION, "", "Are you sure you want to subscribe this mutual fund?",
+        ButtonType.YES, ButtonType.CANCEL, title = "Order Confirmation"
+    ) {
         if (it == ButtonType.YES) {
             // code for handle subscribe product...
         }
@@ -541,7 +552,8 @@ Selanjutnya, request untuk *subscribe product*
     val task = runAsync { WebServiceData.subscribe(subscribeProducts) }
 
 
-Jika berhasil, *loader indicator* akan dihilangkan dan menampilkan pesan *success*. Setelah user *click* tombol *oke* atau *close*, layar *subscription* akan ditutup dengan ``currentStage?.close()``.
+Jika berhasil, *loader indicator* akan dihilangkan dan menampilkan pesan *success*.
+Setelah user *click* tombol *oke* atau *close*, layar *subscription* akan ditutup dengan ``currentStage?.close()``.
 
 .. code-block:: kotlin
 
