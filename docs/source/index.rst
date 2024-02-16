@@ -1,9 +1,7 @@
-Welcome to Dealer Apps documentation!
+Welcome to Dealer APERD documentation!
 ===================================
 
-**Dealer Apps**.
-
-untuk cara build bisa cek langsung di :doc:`build`
+**APERD**.
 
 .. note::
 
