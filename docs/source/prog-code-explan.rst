@@ -35,7 +35,7 @@ Transaction History
 Subscription
 -------
 
-Pada bagian subscription ini semua proses berada pada class ``Subsciption``, yang disimpan pada file :file:`subscription.kt`. Proses yang akan dijelaskan dari menambah *amount* reksadana sampai *submit*/*order* reksadana.
+Pada bagian subscription ini semua proses berada pada class ``Subsciption``, yang disimpan pada file :file:`subscription.kt`. Proses yang akan dijelaskan dari menambah *amount* reksadana (Add Product) sampai *submit*/*order* reksadana (Subscribe Product).
 
 
 Add Product
