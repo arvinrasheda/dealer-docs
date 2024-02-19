@@ -8,6 +8,7 @@ Config yang digunakan untuk modul APERD Pada file Env Server, untuk file sendiri
 berikut ini merupakan contoh dari file .env
 
 .. code-block:: console
+
     ### server AWS
     WS_MARKETUPD_URL=wss://dev-hthbg.bahana.co.id:5050
     WS_TRX_URL=wss://dev-hthbg.bahana.co.id:12000
@@ -24,7 +25,6 @@ berikut ini merupakan contoh dari file .env
     DBG_WS_TRX=true
     # verbose debugging ws market update
     DBG_WS_MARKETUPD=true
-
 
 Config untuk endpoint api APERD (default: https://dev-hthbg.bahana.co.id:12000 ):
 
