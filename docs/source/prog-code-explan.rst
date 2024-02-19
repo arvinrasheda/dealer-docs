@@ -1433,6 +1433,995 @@ Jika gagal, *loader indicator* akan dihilangkan dan menampilkan pesan *error* pa
 *Bulk Order*
 -------
 
+Bulk order merupakan fitur untuk dapat membeli banyak reksadana (*subscription*), yang berada pada layar
+*Bulk Order Subscription Screen*. Semua kode program berada dalam ``BulkSubscription Class``, disimpan pada file
+```bulksubscriptionk.kt``. Kode program yang akan dijelaskan dimulai dari *download template*, *upload file*,
+*process inquiry data*, dan *execute bulk order*.
+
+*Download Template*
+~~~~~~~
+
+Proses *download template* dilakukan dengan menekan tombol *Download Template* dan akan menjalankan *function*
+``downloadTemplate()``. *File* yang akan *generate* berformat *.xlsx*.
+
+.. code-block:: kotlin
+
+    class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+        //other code...
+        private fun downloadTemplate() {
+            val filename = "bulk-order-subscription-${Formatter.getDateAsYMD()}"
+            val fileChooser = FileChooser()
+            val extension = FileChooser.ExtensionFilter("Microsoft Excel Worksheet", "*.xlsx")
+            fileChooser.extensionFilters.add(extension)
+            fileChooser.initialFileName = filename
+            val file = fileChooser.showSaveDialog(currentWindow)
+            if (file != null) {
+                writeExcel(file)
+            }
+        }
+    }
+
+
+Pertama, menentukan beberapa *variables* untuk digunakan pada proses selanjutnya.
+
+.. code-block:: kotlin
+
+    val filename = "bulk-order-subscription-${Formatter.getDateAsYMD()}"
+    val fileChooser = FileChooser()
+    val extension = FileChooser.ExtensionFilter("Microsoft Excel Worksheet", "*.xlsx")
+
+
+Menyimpan nama *file* dan *extention file* pada ``FileChooser()`` *Object*,
+
+.. code-block:: kotlin
+
+    fileChooser.extensionFilters.add(extension)
+    fileChooser.initialFileName = filename
+
+
+Proses selanjutnya, menemtukan tempat penyimpanan *file* yang akan diunduh dengan menggunakan
+``showSaveDialog(currentWindow)``. *Function* ini akan mengambil lokasi *file download* juga.
+Lalu dilakukan pengecekan apakah sudah ditentukan atau belum. Kalau sudah proses *download* akan di eksekusi
+``writeExcel(file)``.
+
+
+.. code-block:: kotlin
+
+    val file = fileChooser.showSaveDialog(currentWindow)
+    if (file != null) {
+        writeExcel(file)
+    }
+
+
+*Function* ``writeExcel(file)`` masih berada pada *class* yang sama dan berguna untuk membuat *file excel* dengan
+template yang sudah ditentukan. *Template* yang dibuat berupa nama beberapa kolom diatarannya *Client Code*,
+*IFUA No*, dan *Amount* (Nominal) yang berada pada kode
+``columns.setAll("Client Code", "IFUA No", "Fund Code", "Amount (Nominal)")``.
+
+.. code-block:: kotlin
+
+    class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+        //other code...
+        private fun writeExcel(file: File) {
+            val wb = XSSFWorkbook()
+            try {
+                val outputStream = FileOutputStream(file)
+                val sheet = wb.createSheet("order")
+                val columns: ObservableList<String> = observableListOf()
+
+                columns.setAll("Client Code", "IFUA No", "Fund Code", "Amount (Nominal)")
+
+                var colNumber = 0
+                val rowHeader = sheet.createRow(0)
+                columns.forEach { title ->
+                    val cell = rowHeader.createCell(colNumber++)
+                    cell.setCellValue(title)
+                }
+                wb.write(outputStream)
+                outputStream.close()
+            } catch (e: Exception) {
+                e.message?.let { Alerts.errors(it) }
+            } finally {
+                wb.close()
+            }
+        }
+    }
+
+
+*Upload File*
+~~~~~~~
+
+Fitur *upload file* harus sesuai dengan *template* yang sudah diunduh, dengan format *.xlsx*. Proses ini dilakukan
+dengan menekan tombol *Upload* yang akan menjalankan *function* ``loadFileDialog()``.
+
+.. code-block:: kotlin
+    class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+        //other code...
+        private fun loadFileDialog() {
+            try {
+                isFileChoosing = true
+                updateUploadButtonState()
+
+                val file: List<File> = chooseFile("Select file", arrayOf(
+                    FileChooser.ExtensionFilter("Microsoft Excel Worksheet", "*.xlsx")
+                ))
+
+                isFileChoosing = false
+                updateUploadButtonState()
+
+                if (file.isEmpty()) return
+                resetDataAll()
+
+                val selectedFile: File = file.first()
+                val filePath = selectedFile.absolutePath
+                loadOrdersFromFile(filePath)
+            } catch (e: Exception) {
+                e.message?.let { Alerts.errors(it) }
+
+                isFileChoosing = false
+                updateUploadButtonState()
+            }
+        }
+    }
+
+
+Langkah awal akan membuka *file explorer* untuk memilih *file* yang akan diunggah. Lalu tombol *Upload* akan *disable*
+agar user tidak dapat membuka *file explorer* lagi. Proses ini diawali dengan *disable* tombol *Upload* terlebih dahulu,
+setelah itu *file explorer* akan dibuka.
+
+.. code-block:: kotlin
+
+    isFileChoosing = true
+    updateUploadButtonState()
+
+    val file: List<File> = chooseFile("Select file", arrayOf(
+        FileChooser.ExtensionFilter("Microsoft Excel Worksheet", "*.xlsx")
+    ))
+
+
+Setelah *file* dipilih, tombol *Upload* akan diaktifkan lagi dengan menggunakan kode
+
+.. code-block:: kotlin
+
+    isFileChoosing = false
+    updateUploadButtonState()
+
+
+Selanjutnya dilakukan pengecekan apakah *file* kosong atau tidak. Kalau *file* kosong proses *upload* akan diberhentikan.
+
+.. code-block:: kotlin
+
+    if (file.isEmpty()) return
+
+Jika *file* tidak kosong, selanjutnya  semua data akan direset ``resetDataAll()``.
+
+.. code-block:: kotlin
+    class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+        //other code...
+        private fun resetDataAll() {
+            isCheckedAll.value = false
+            isUploaded.value = false
+            isProcessInquiryClicked.value = false
+
+            userProfiles.clear()
+
+            totalItems.set(0)
+            totalItemsProcessed.set(0)
+            totalAmountProcessed.set(0)
+
+            orderBookingList.clear()
+            checkedList.clear()
+            cashBalances.clear()
+        }
+    }
+
+
+Setelah itu, file akan dibaca oleh sistem dan hasilnya akan ditampilkan pada tabel di layar.
+
+.. code-block:: kotlin
+
+    val selectedFile: File = file.first()
+    val filePath = selectedFile.absolutePath
+    loadOrdersFromFile(filePath)
+
+
+Pada *Function* ``loadOrdersFromFile(filePath)`` ini akan menyimpan data pada *excel* ke tabel.
+Pertama hasil *read file excel* disimpan pada *variable* ```val bulkOrderList = bulkLoader.loadFile(filePath)``.
+Setelah berhasil membaca *file* akan dipindahkan pada *variable* ``orderBookingList.setAll(bulkOrder)`` untuk ditampilkan
+pada tabel. Setelah pemindahan selesai, *variable* ``isUploaded`` *set* ke *true*, agar tombol *Process Inquiry Data*
+dapat diaktifkan.
+
+.. code-block:: kotlin
+
+    class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+        //other code...
+        private fun loadOrdersFromFile(filePath: String) {
+            isUploaded.value = false
+
+            val bulkLoader = BulkOrderSubscriptionLoader()
+            val bulkOrderList = bulkLoader.loadFile(filePath)
+
+            val bulkOrder = bulkOrderList.mapIndexed { idx, order ->
+                val trxType = Constant.TRANS_TYPE_SUBS.toInt()
+
+                val unformattedAmount = order.amount.replace(",", "")
+                val amount = unformattedAmount.toDoubleOrNull() ?: throw Exception("The amount column must be filled in with numbers only.")
+
+                val numb = idx + 1
+                order.orderId = numb.toString()
+
+                order.type = trxType.toString()
+                order.amount = amount.roundToLong().toString()
+
+                order.isCheckAble = false
+
+                order
+            }
+
+            orderBookingList.setAll(bulkOrder)
+            isUploaded.value = true
+        }
+    }
+
+
+Terakhir, jika terjadi kesalahan atau *error* akan menampilkan pesan ke layar ``e.message?.let { Alerts.errors(it) }``.
+Setelah pesan *error* ditampilkan, tombol *Upload* akan diaktifkan kembali.
+
+.. code-block:: kotlin
+
+    try {
+        //handle upload file...
+    } catch (e: Exception) {
+        e.message?.let { Alerts.errors(it) }
+
+        isFileChoosing = false
+        updateUploadButtonState()
+    }
+
+
+*Process Inquiry Data*
+~~~~~~~
+
+Fitur ini berfungsi untuk memvalidasi semua data yang sudah diunggah, sebelum semua data di *order*. Proses ini berjalan
+seleteh tombol *Process Inquiry Data* ditekan dan akan menjalankan *function* ``processInquiryData()``, seperti pada
+kode dibawah ini.
+
+.. code-block:: kotlin
+
+    class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+        //other code...
+        private fun processInquiryData() {
+            try {
+                if (clientList.isEmpty()) {
+                    Alerts.warning(
+                        "There is no client list data. Please try logging in again then click this button"
+                    )
+                    return
+                }
+                frgLoader.openModal(
+                    stageStyle = StageStyle.TRANSPARENT,
+                    modality = Modality.APPLICATION_MODAL,
+                    escapeClosesWindow = false,
+                    resizable = false,
+                    owner = this@BulkSubscription.currentWindow
+                )
+
+                cashBalances.clear()
+                unprocessedMsgClearAll()
+
+                runAsync {
+                    orderBookingList.map { order ->
+                        order.status = AperdOrderStatus.UNPROCESSED
+
+                        val client = clientList.firstOrNull { it.clientCode == order.saCode }
+                        if (client == null) {
+                            order.unprocessedMsgList.add("Sorry, there is no client data for SA Code ${order.saCode}.")
+                        } else {
+                            order.name = client.fullName
+
+                            runBlocking {
+                                setUserData(client.clientCode)
+                            }
+
+                            //need to remove any leading zeroes client code, cuz the response is not use that
+                            client.clientCode = Helper.removeLeadingZeros(client.clientCode)
+
+                            val user = userProfiles.find { it.custCode.equals(client.clientCode) }
+                            if (user !== null) {
+                                val inquiry = InquiryTransaction(
+                                    fundCode = order.fundCode,
+                                    ifuaNo = order.ifuaNo,
+                                    rdnSwiftCode = Constant.bankInfo[user.rdnBnCode]?.get("bank_code") ?: "",
+                                    amountNominal = order.amount,
+                                    unitNominal = "0",
+                                    transactionType = Constant.TRANS_TYPE_SUBS
+                                )
+
+                                val inquiryTransaction = runBlocking { WebServiceData.inquiryTransaction(inquiry) }
+                                if (inquiryTransaction != null) {
+                                    order.sid = inquiryTransaction.sid
+                                    order.lastNav = inquiryTransaction.lastNavUnit
+                                    order.estUnit = inquiryTransaction.estUnit
+                                    order.bankCharge = inquiryTransaction.bankCharge
+                                    order.cbAccNo = inquiryTransaction.cbAccNo
+                                    order.cbSwiftCode = inquiryTransaction.cbSwiftCode
+                                    order.cbBankName = inquiryTransaction.cbAccName
+                                    order.trxFee = inquiryTransaction.feePersen
+                                    order.trxFeeAmount = inquiryTransaction.feeAmount
+                                    order.dealerFee = "0"
+                                    order.dealerFeeAmount = "0"
+                                    order.transferType = inquiryTransaction.transferType
+                                    order.transactionType = inquiryTransaction.transactionType
+
+                                    if (order.amount.toLong() > 0L) {
+                                        order.isCheckAble = true
+                                    } else {
+                                        order.unprocessedMsgList.add("Amount (Nominal) must be more than 0.")
+                                    }
+                                } else {
+                                    order.unprocessedMsgList.add("Failed to retrieve mutual fund data for Fund Code ${order.fundCode}.")
+                                }
+                            } else {
+                                order.unprocessedMsgList.add("Sorry, there is no profile data for ${order.name}.")
+                            }
+
+                            val cashBalance = cashBalances.filter { (key, _) -> key == client.clientCode }
+                            if (cashBalance.isEmpty()) {
+                                order.unprocessedMsgList.add("Sorry, failed to get Eligible Cash On Hand Data. Please try again later.")
+                            }
+                        }
+
+                        order
+                    }
+                } ui { bulkOrder ->
+                    orderBookingList.setAll(bulkOrder)
+
+                    validateCashOnHand()
+                    updateCheckedAllStatus()
+                    updateSummaryTotalSection()
+
+                    isProcessInquiryClicked.set(true)
+
+                    frgLoader.close()
+                }
+            } catch (e: Exception) {
+                Platform.runLater {
+                    Alerts.errors("Sorry, failed to process inquiry data, please try again later.")
+
+                    e.message?.let {
+                        Logger.warning("${tagName}--processInquiryData", e.message!!)
+                    }
+                }
+            }
+        }
+    }
+
+
+Pertama, akan melakukan pengecekan data *client* yang sudah diambil setelah berhasil *login* aplikasi.
+
+.. code-block:: kotlin
+
+    if (clientList.isEmpty()) {
+        Alerts.warning(
+            "There is no client list data. Please try logging in again then click this button"
+        )
+        return
+    }
+
+
+Menampilkan *loader indicator* pada layar.
+
+.. code-block:: kotlin
+
+    frgLoader.openModal(
+        stageStyle = StageStyle.TRANSPARENT,
+        modality = Modality.APPLICATION_MODAL,
+        escapeClosesWindow = false,
+        resizable = false,
+        owner = this@BulkSubscription.currentWindow
+    )
+
+
+Setelah itu, akan menghapus data *cash balance* dan *unprocessed messages*
+
+.. code-block:: kotlin
+
+    cashBalances.clear()
+    unprocessedMsgClearAll()
+
+
+Selanjutnya, kita akan melakukan pengecekan pada setiap data yang sudah diunggah. Pengecekan dilakukan satu persatu,
+yang berada pada block ``runAsync {...}``. Setelah pengecekan selesai data pada tabel akan diperbaharui.
+Pertama, status akan di isi *Unprocesed* dahulu.
+
+.. code-block:: kotlin
+
+    order.status = AperdOrderStatus.UNPROCESSED
+
+
+Setelah itu, akan dilakukan pengecekan data *client* apakah tersedia atau tidak. Jika tidak ada, pengecekan akan berhenti
+dan menyimpan pesan gagal nya juga.
+
+.. code-block:: kotlin
+
+    val client = clientList.firstOrNull { it.clientCode == order.saCode }
+    if (client == null) {
+        order.unprocessedMsgList.add("Sorry, there is no client data for SA Code ${order.saCode}.")
+    } else {
+        //other code...
+    }
+
+
+Jika *client* ada, akan menyimpan data *fullname* dan mengambil data *user profile* dan *cash balance*.
+Pengambilan dan penyimpanan data-data yang diambil dilakukan pada *function* ``setUserData(client.clientCode)``.
+
+.. code-block:: kotlin
+    class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+        //other code...
+        fun setUserData(custCode: String) {
+            val userProfileList = handleUserProfileService(custCode)
+            val cashList = handleCashBalancesService(custCode)
+
+            if (userProfileList.isNotEmpty() && cashList.isNotEmpty()) {
+                setUserProfiles(userProfileList[0])
+                setCashBalances(cashList[0])
+            }
+        }
+
+        private fun processInquiryData() {
+            //...
+                order.name = client.fullName
+                runBlocking {
+                    setUserData(client.clientCode)
+                }
+                //...
+        }
+    }
+
+
+Selanjutnya, menghapus angka *prefix* pada *clientCode*
+
+.. code-block:: kotlin
+
+    client.clientCode = Helper.removeLeadingZeros(client.clientCode)
+
+
+Setelah itu, cek apakah *clientCode* yang sudah diunggah sesuai dengan data *User Profiles*. Kalau tidak, pesan *error*
+akan ditampilkan. Perlu diingat *variable* ``userProfiles`` terisi setelah proses pengambilan data *user profile*
+ sebelumnya berhasil, yang berada pada kode ``setUserData(client.clientCode)``.
+
+.. code-block:: kotlin
+
+    val user = userProfiles.find { it.custCode.equals(client.clientCode) }
+    if (user !== null) {
+        //other code...
+    } else {
+        order.unprocessedMsgList.add("Sorry, there is no profile data for ${order.name}.")
+    }
+
+
+Setelah user dicek, akan *request inquiry transaction*.
+
+.. code-block:: kotlin
+
+    val inquiry = InquiryTransaction(
+        fundCode = order.fundCode,
+        ifuaNo = order.ifuaNo,
+        rdnSwiftCode = Constant.bankInfo[user.rdnBnCode]?.get("bank_code") ?: "",
+        amountNominal = order.amount,
+        unitNominal = "0",
+        transactionType = Constant.TRANS_TYPE_SUBS
+    )
+
+    val inquiryTransaction = runBlocking { WebServiceData.inquiryTransaction(inquiry) }
+
+
+Kode selanjutnya, akan menyimpan data *inquiry transaction* yang sudah diambil, dan jika gagal akan menampilkan pesan
+*error*.
+
+.. code-block:: kotlin
+
+    if (inquiryTransaction != null) {
+        order.sid = inquiryTransaction.sid
+        order.lastNav = inquiryTransaction.lastNavUnit
+        order.estUnit = inquiryTransaction.estUnit
+        order.bankCharge = inquiryTransaction.bankCharge
+        order.cbAccNo = inquiryTransaction.cbAccNo
+        order.cbSwiftCode = inquiryTransaction.cbSwiftCode
+        order.cbBankName = inquiryTransaction.cbAccName
+        order.trxFee = inquiryTransaction.feePersen
+        order.trxFeeAmount = inquiryTransaction.feeAmount
+        order.dealerFee = "0"
+        order.dealerFeeAmount = "0"
+        order.transferType = inquiryTransaction.transferType
+        order.transactionType = inquiryTransaction.transactionType
+
+        if (order.amount.toLong() > 0L) {
+            order.isCheckAble = true
+        } else {
+            order.unprocessedMsgList.add("Amount (Nominal) must be more than 0.")
+        }
+    } else {
+        order.unprocessedMsgList.add("Failed to retrieve mutual fund data for Fund Code ${order.fundCode}.")
+    }
+
+
+Terakhir, kode untuk menyimpan pembaharuan data ``orderBookingList``.
+
+.. code-block:: kotlin
+    orderBookingList.map { order ->
+        //other code...
+        order
+    }
+
+
+Setelah semua pengecekan data selesai, lanjutkan proses pada *block* ``ui { bulkOrder -> ...}``.
+
+.. code-block:: kotlin
+
+    runAsync {
+        //other code...
+    } ui { bulkOrder ->
+        orderBookingList.setAll(bulkOrder)
+
+        validateCashOnHand()
+        updateCheckedAllStatus()
+        updateSummaryTotalSection()
+
+        isProcessInquiryClicked.set(true)
+
+        frgLoader.close()
+    }
+
+
+Pertama, *update* data ``orderBookingList`` yang sudah diubah sebelumnya ``orderBookingList.setAll(bulkOrder)``.
+Lalu, memvalidasi *cash on hand* dengan menggunakan *function* ``validateCashOnHand()``. *Update checkbox* setiap baris,
+lalu *update summary total section*. Tidak lupa untuk mengganti *value* dari ``isProcessInquiryClicked`` menjadi *true,
+dan *loader indicator* dihilangkan.
+
+
+Berikut merupakan penjelasan lebih detail mengenai beberapa *functions* yang berda pada *block* ``ui { bulkOrder -> ...}``.
+
+#. *Function validateCashOnHand()*
+    Fungsi ini digunakan agar dapat memvalidasi *cash on hand* untuk setiap *client* dari setiap reksadana yang akan dibeli.
+    Mengenai apakah jumah *cash* yang dimiliki *client* memadai untuk membeli reksadana atau tidak. Fungsi ini juga
+    yang akan mengganti status dari *Unprocessed* menjadi *Ready for Processing*, agar reksadana dapat dibeli.
+
+    .. code-block:: kotlin
+
+        class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+            //other code...
+            private fun validateCashOnHand() {
+                cashBalances.forEach { (saCode, cashBalance) ->
+                    var cash = cashBalance
+
+                    orderBookingList
+                        .filter {
+                            val saCodeWithNoLeadingZeros = Helper.removeLeadingZeros(it.saCode)
+                            saCodeWithNoLeadingZeros == saCode
+                        }
+                        .forEach { order ->
+                            val subTotal = order.subtotal.toDouble()
+
+                            order.cashOnHand = cash.toString()
+
+                            if (order.isCheckAble) {
+                                if (subTotal < cash) {
+                                    order.isChecked = true
+                                    order.status = AperdOrderStatus.READY_FOR_PROCESSING
+
+                                    cash -= subTotal
+
+                                    addCheck(order)
+                                } else {
+                                    order.isCheckAble = false
+                                    order.status = AperdOrderStatus.UNPROCESSED
+                                    order.unprocessedMsgList.add("No enough cash.")
+                                }
+
+                            }
+
+                            orderBookingList[orderBookingList.indexOf(order)] = order
+                        }
+                }
+            }
+        }
+
+
+#. *Function updateCheckedAllStatus()*
+    *function* ``updateCheckedAllStatus()`` akan menceklis *checkbox toggle checked all*.
+
+
+    .. code-block:: kotlin
+
+        class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+            //other code...
+            private fun updateCheckedAllStatus() {
+                val checkedCount = checkedList.count()
+                val checkAbleCount = orderBookingList.count { it.isCheckAble }
+
+                isCheckedAll.value =  (checkAbleCount > 0)  && (checkedCount == checkAbleCount)
+            }
+        }
+
+
+#. *Function updateSummaryTotalSection()*
+    Terakhir, fungsi ini berguna untuk memperbaharui *summay section* pada layar.
+
+    .. code-block:: kotlin
+
+        class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+            //other code...
+            private fun updateSummaryTotalSection() {
+                totalItems.value = calcTotalItems()
+                totalItemsProcessed.value = calcTotalProcessed()
+                totalItemsUnprocessed.value = calcTotalUnprocessed()
+                totalAmountProcessed.value = calcTotalAmountProcessed()
+                totalFeeProcessed.value = calcTotalFeeProcessed()
+                totalBcProcessed.value = calcTotalBcProcessed()
+                grandTotal.value  = calcGrandTotal()
+            }
+        }
+
+
+Kode terakhir berfungsi untuk menampilkan pesan *error* pada layar jika dalam block ``try {...}`` terdapat *error*,
+dan menyimpan detail *error* pada *logger*.
+
+
+.. code-block:: kotlin
+        try {
+            //other code...
+        }
+        catch (e: Exception) {
+            Platform.runLater {
+                Alerts.errors("Sorry, failed to process inquiry data, please try again later.")
+
+                e.message?.let {
+                    Logger.warning("${tagName}--processInquiryData", e.message!!)
+                }
+            }
+        }
+
+
+
+*Execute Bulk Order*
+~~~~~~~
+
+Pada proses ini akan membeli semua reksadana yang sudah diceklist oleh *user*. Akan berjalan ketika tombol *Execute*
+ditekan dan akan menjalankan *function* ``executeBulkOrder()``.
+
+
+.. code-block:: kotlin
+
+    class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
+        //other code...
+        private fun executeBulkOrder() {
+            val validator = Validator()
+                .rule(orderBookingList.isNotEmpty(), "The table is empty, please upload the file again.")
+                .rule(checkedList.isNotEmpty(), "Please choose one of the mutual funds.")
+                .validate()
+
+            if (!validator.isValid()) {
+                Alerts.warning(validator.getErrorMessages().joinToString(separator  = "\n"))
+                return
+            }
+
+            var bulkOrderSuccessful = false
+            alert(
+                Alert.AlertType.CONFIRMATION, "",
+                "Are you sure you want to subscribe to the mutual funds?", ButtonType.YES,
+                ButtonType.CANCEL, title = "Bulk Order Confirmation"
+            ) { btnType ->
+                if (btnType == ButtonType.YES) {
+                    frgLoader.openModal(
+                        stageStyle = StageStyle.TRANSPARENT,
+                        modality = Modality.APPLICATION_MODAL,
+                        escapeClosesWindow = false,
+                        resizable = false,
+                        owner = this@BulkSubscription.currentWindow
+                    )
+                    runAsync {
+                        checkedList.forEachIndexed { idx, order ->
+                            val user = userProfiles.find { it.custCode == order.saCode }
+
+                            val subscribe = MutualFundOrder(
+                                transDate = DateAndTime.now(),
+                                transType = Constant.TRANS_TYPE_SUBS,
+                                fundCode = order.fundCode,
+                                sid = order.sid,
+                                qtyAmount = order.amount,
+                                qtyUnit = order.estUnit,
+                                lastNav = order.lastNav,
+                                feeNominal = order.trxFeeAmount,
+                                feePersen = order.trxFee,
+                                feeNominalDealer = order.dealerFeeAmount,
+                                feePersenDealer = order.dealerFee,
+                                redmPaymentAccSeqCode = "",
+                                redmPaymentBicCode = "",
+                                redmPaymentAccNo = "",
+                                rdnAccNo = user?.rdncbAccNo,
+                                rdnBankCode = Constant.bankInfo[user?.rdnBnCode]?.get("bank_code") ?: "",
+                                rdnBankName = user?.rdnBnName,
+                                cbAccNo = order.cbAccNo,
+                                cbBankCode = order.cbSwiftCode,
+                                cbBankName = order.cbBankName,
+                                paymentDate = DateAndTime.now(),
+                                transferType = order.transactionType,
+                                transactionType = order.transferType,
+                                bankCharge = order.bankCharge,
+                                deviceId = Constant.DEVICE_ID_DESKTOP,
+                                autoOrder = "",
+                                dealerName = GlobalState.session.userId,
+                                bulkOder = "y"
+                            )
+
+                            val result = runBlocking {
+                                val webService = WebService()
+                                webService.bulkSubscriptionOrder(subscribe)
+                            }
+
+                            if (result !== null) {
+                                val msg = JSONObject(result)
+
+                                try {
+                                    ApiHelper.checkStatusResponse(msg)
+
+                                    order.status = AperdOrderStatus.PROCESSED
+
+                                    if (Config.DBG_WS_MARKETUPD) Logger.debug("bulkSubscriptionOrder--onMessage1", result)
+                                } catch (e: Exception) {
+                                    order.status = AperdOrderStatus.UNPROCESSED
+
+                                    order.unprocessedMsgList.add("Failed to subscribe, please try again later")
+                                } finally {
+                                    order.isCheckAble = false
+                                    order.isChecked = false
+                                }
+
+                            } else {
+                                order.status = AperdOrderStatus.UNPROCESSED
+                                order.unprocessedMsgList.add("Failed to subscribe, please try again later")
+                            }
+
+                            orderBookingList[orderBookingList.indexOf(order)] = order
+                        }
+
+                        bulkOrderSuccessful = true
+                    } ui {
+                        if (bulkOrderSuccessful) {
+                            checkedList.clear()
+
+                            validateCashOnHand()
+                            updateCheckedAllStatus()
+                            updateSummaryTotalSection()
+
+                            frgLoader.close()
+
+                            Alerts.information("The selected product has been processed.")
+                        } else {
+                            frgLoader.close()
+                            Alerts.information("Bulk order processing failed. Please try again later.")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+Pertama, melakukan validasi apakah data sudah ada yang dipilih atau belum
+
+.. code-block:: kotlin
+
+    val validator = Validator()
+        .rule(orderBookingList.isNotEmpty(), "The table is empty, please upload the file again.")
+        .rule(checkedList.isNotEmpty(), "Please choose one of the mutual funds.")
+        .validate()
+
+    if (!validator.isValid()) {
+        Alerts.warning(validator.getErrorMessages().joinToString(separator  = "\n"))
+        return
+    }
+
+
+Jika berhasil, akan mengubah nilai dari ``bulkOrderSuccessful`` menjadi *false* dan menampilkan pesan konfirmasi untuk
+melakukan *bulk order*
+
+.. code-block:: kotlin
+
+    var bulkOrderSuccessful = false
+    alert(
+        Alert.AlertType.CONFIRMATION, "",
+        "Are you sure you want to subscribe to the mutual funds?", ButtonType.YES,
+        ButtonType.CANCEL, title = "Bulk Order Confirmation"
+    ) { btnType ->
+        if (btnType == ButtonType.YES) {
+            //handle bulk order...
+        }
+    }
+
+
+Setelah user menekan tombol *Yes* proses *bulk order* akan dilanjutkan, dan pertamakali akan menampilkan *loader indicator*.
+
+.. code-block:: kotlin
+
+    frgLoader.openModal(
+        stageStyle = StageStyle.TRANSPARENT,
+        modality = Modality.APPLICATION_MODAL,
+        escapeClosesWindow = false,
+        resizable = false,
+        owner = this@BulkSubscription.currentWindow
+    )
+
+
+Selanjutnya, reksadana akan di *order* satu persatu seperti pada kode yang ditampilkan dibawah ini.
+
+.. code-block:: kotlin
+
+    runAsync {
+        checkedList.forEachIndexed { idx, order ->
+            val user = userProfiles.find { it.custCode == order.saCode }
+
+            val subscribe = MutualFundOrder(
+                transDate = DateAndTime.now(),
+                transType = Constant.TRANS_TYPE_SUBS,
+                fundCode = order.fundCode,
+                sid = order.sid,
+                qtyAmount = order.amount,
+                qtyUnit = order.estUnit,
+                lastNav = order.lastNav,
+                feeNominal = order.trxFeeAmount,
+                feePersen = order.trxFee,
+                feeNominalDealer = order.dealerFeeAmount,
+                feePersenDealer = order.dealerFee,
+                redmPaymentAccSeqCode = "",
+                redmPaymentBicCode = "",
+                redmPaymentAccNo = "",
+                rdnAccNo = user?.rdncbAccNo,
+                rdnBankCode = Constant.bankInfo[user?.rdnBnCode]?.get("bank_code") ?: "",
+                rdnBankName = user?.rdnBnName,
+                cbAccNo = order.cbAccNo,
+                cbBankCode = order.cbSwiftCode,
+                cbBankName = order.cbBankName,
+                paymentDate = DateAndTime.now(),
+                transferType = order.transactionType,
+                transactionType = order.transferType,
+                bankCharge = order.bankCharge,
+                deviceId = Constant.DEVICE_ID_DESKTOP,
+                autoOrder = "",
+                dealerName = GlobalState.session.userId,
+                bulkOder = "y"
+            )
+
+            val result = runBlocking {
+                val webService = WebService()
+                webService.bulkSubscriptionOrder(subscribe)
+            }
+            //other code...
+        }
+        //other code...
+    } ui {
+        //other code...
+    }
+
+
+Setelah *request bulk order* ``webService.bulkSubscriptionOrder(subscribe)`` dilakukan, akan dicek apakah *response*
+yang diterima berhasil atau tidak, jika tidak berhasil maka status menjadi *Unprocessed* dan menampilkan pesan *gagal*
+ke layar.
+
+.. code-block:: kotlin
+
+    if (result !== null) {
+        //other code...
+    } else {
+        order.status = AperdOrderStatus.UNPROCESSED
+        order.unprocessedMsgList.add("Failed to subscribe, please try again later")
+    }
+
+
+Jika berhasil, status akan menjadi *Processed* yang menandakan *bulk order* berhasil dilakukan. Jika terdapat *error*
+akan langsung mengubah status menjadi *Unprocessed* dan pesannya ditampilkan pada layar,
+yang berada pada *block* ``catch (e: Exception) {...}``. Terakhir *checkbbox* akan *unchecked* dan *disabled*.
+
+.. code-block:: kotlin
+
+    try {
+        ApiHelper.checkStatusResponse(msg)
+
+        order.status = AperdOrderStatus.PROCESSED
+
+        if (Config.DBG_WS_MARKETUPD) Logger.debug("bulkSubscriptionOrder--onMessage1", result)
+    } catch (e: Exception) {
+        order.status = AperdOrderStatus.UNPROCESSED
+
+        order.unprocessedMsgList.add("Failed to subscribe, please try again later")
+    } finally {
+        order.isCheckAble = false
+        order.isChecked = false
+    }
+
+
+Selanjutnya, memperbaharui data pada tabel, dan *variable* ``bulkOrderSuccessful`` menjadi *true*.
+
+.. code-block:: kotlin
+
+    private fun executeBulkOrder() {
+        //other code...
+        runAsync {
+            checkedList.forEachIndexed { idx, order ->
+                //other code...
+                orderBookingList[orderBookingList.indexOf(order)] = order
+            }
+            bulkOrderSuccessful = true
+        } ui {
+            //other code...
+        }
+    }
+
+
+Seteleh proses *request bulk order* selesai, akan menuju ke *block* ``ui {...}``.
+
+.. code-block:: kotlin
+
+    private fun executeBulkOrder() {
+        runAsync {
+            //other code...
+        } ui {
+            if (bulkOrderSuccessful) {
+                checkedList.clear()
+
+                validateCashOnHand()
+                updateCheckedAllStatus()
+                updateSummaryTotalSection()
+
+                frgLoader.close()
+
+                Alerts.information("The selected product has been processed.")
+            } else {
+                frgLoader.close()
+                Alerts.information("Bulk order processing failed. Please try again later.")
+            }
+        }
+    }
+
+
+Pertama, akan melakukan pengecekan apakah proses *bulk order* berhasil dilakukan atau tidak. Jika gagal akan menampilkan
+pesan error pada layar dan *loader indicator* dihilangkan.
+
+
+.. code-block:: kotlin
+
+    if (bulkOrderSuccessful) {
+        //other code...
+    } else {
+        frgLoader.close()
+        Alerts.information("Bulk order processing failed. Please try again later.")
+    }
+
+
+
+Kalau berhasil, data jumlah *checkbox* yang sudah diceklis akan dihapus ``checkedList.clear()``. *Cash on hand* akan
+divalidasi lagi, *toggle checkbox all* akan di *uncheck* dan *summary section* diperbaharui. Detail dari setiap *functions*
+bisa dilihat pada *section* *Process Inquiry Data*. Terakhir *loader indicator* akan dihilangkan dan menampilkan pesan
+berhasil *bulk order*.
+
+
+.. code-block:: kotlin
+
+    if (bulkOrderSuccessful) {
+        checkedList.clear()
+
+        validateCashOnHand()
+        updateCheckedAllStatus()
+        updateSummaryTotalSection()
+
+        frgLoader.close()
+
+        Alerts.information("The selected product has been processed.")
+    }  else {
+        //other code...
+    }
+
 
 
 *Bulk Order History*
