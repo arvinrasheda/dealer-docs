@@ -1,6 +1,17 @@
 Configuration
 ===================================
 
+Config Env App
+----------------
+Config untuk pengaturan pada app , ada pada ``path\to\app\var\app.env`` didalam sini kita dapat melakukan untuk log error
+
+.. code-block:: console
+
+    # DEBUG | TRACE
+    LOG_LEVEL=ERROR
+    ALT_LOG_LEVEL=ERROR
+    ALT_WRITE_LOG=true
+
 
 Config Env Server
 ----------------
@@ -9,14 +20,9 @@ berikut ini merupakan contoh dari file .env
 
 .. code-block:: console
 
-    ### server AWS
+    # For Web Socket
     WS_MARKETUPD_URL=wss://dev-hthbg.bahana.co.id:5050
     WS_TRX_URL=wss://dev-hthbg.bahana.co.id:12000
-
-    # DEBUG | TRACE
-    LOG_LEVEL=LOG
-    ALT_LOG_LEVEL=LOG
-    ALT_WRITE_LOG=true
 
     # interval between reconnect attempts, in seconds
     RECONNECT_INTERVAL=3
