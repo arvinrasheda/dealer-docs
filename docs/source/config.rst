@@ -46,7 +46,7 @@ Config untuk disable dan enable Dealer Fee APERD (default: false ) pada env serv
 
 Config untuk update package online
 ----------------
-arahkan uri update ``app/DX-TRADE.cfg ``  ke host online yang menyimpan data  ``update``
+arahkan uri update ``app/DX-TRADE.cfg``  ke host online yang menyimpan data  ``update``
 
 .. code-block:: console
 
@@ -56,7 +56,7 @@ arahkan uri update ``app/DX-TRADE.cfg ``  ke host online yang menyimpan data  ``
 Config untuk update package offline
 ----------------
 
-arahkan uri update ``app/DX-TRADE.cfg ``  ke folder  ``update`` hasil download:
+arahkan uri update ``app/DX-TRADE.cfg``   ke folder   ``update`` hasil download:
 
 .. code-block:: console
 
