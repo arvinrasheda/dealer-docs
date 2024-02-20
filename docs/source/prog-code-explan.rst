@@ -5,7 +5,6 @@ Penjelasan Kode Program APERD Dealer Desktop
 *Mutual Fund Screen*
 -------
 
-penjelasan bagian layar ini itu apa....
 *Mutual fund sceeen* merupakan layar pertama yang dibuka sebelum proses *subcription*, *redemption* dan *switching*
 dapat dilakukan. Setelah layar terbuka, hal pertama yang harus dilakukan yaitu menentukan *client*. *Client* dipilih
 untuk menampilkan data yang berada pada setiap *tab* (*Product List*, *Portfolio List*, *Transaction History*).
@@ -78,6 +77,7 @@ Pertama, akan mereset data *portfolio* dan *product*.
 
     clearProduct()
 
+Detail dari setiap *function* pada kode di atas.
 
 .. code-block:: kotlin
 
@@ -120,6 +120,7 @@ Selanjutnya, melakukan validasi apakah *client* sudah dipilih atau belum. Kalau 
         return
     }
 
+Detail dari *function* ``validateClientIsSelected()`` pada kode di atas.
 
 .. code-block:: kotlin
 
@@ -325,7 +326,7 @@ Menghapus *history transaction* dengan ``clearHistory()``. Dengan detail dari *f
     }
 
 
-*Request history transaction* untuk mendapatkan data *history* yang *bulk order* nya saja dari *server*.
+*Request history transaction* untuk mendapatkan data *history* dari *server*.
 
 .. code-block:: kotlin
 
