@@ -2426,9 +2426,10 @@ berhasil *bulk order*.
 
 *Bulk Order History*
 -------
-*Bulk order history* akan menampilkan semua daftar *order* reksadana yang berahasil dilakukan pada proses *bulk order*.
-Semua proses untuk menampilkan histori *bulk order* terdapat di *BulkOrderHistory Class* dan disimpan pada *file* ``bulkorderhistory.kt``.
-Setelah menentukan tanggal, lanjut menekan tombol *submit* dan akan menajalankan *function* ``getOrderHistory()``
+*Bulk order history* menampilkan semua daftar *order* reksadana yang berhasil dilakukan pada *bulk order*.
+Semua proses untuk menampilkan histori *bulk order* terdapat di ``BulkOrderHistory Class``
+dan disimpan pada *file* ``bulkorderhistory.kt``. Histori dapat ditampilkan dengan menentukan tanggal awal dan akhir
+yang sesuai. Terakhir, menekan tombol *submit* dan akan menjalankan *function* ``getOrderHistory()``,
 seperti kode dibawah ini.
 
 .. code-block:: kotlin
@@ -2483,7 +2484,7 @@ seperti kode dibawah ini.
     }
 
 
-Pertama, melakukan validasi agar format tanggal yang diberikan sesuai tidak ada yang bermasalah.
+Pertama, melakukan validasi agar format tanggal yang diberikan sesuai, tidak ada yang bermasalah.
 
 .. code-block:: kotlin
 
@@ -2576,7 +2577,7 @@ Terakhir, akan menampilkan pesan pemberitahuan jika histori *bulk order* kosong.
     }
 
 
-Berikut merupakan detail dari *function* ``alertHistoryEmpty()``.
+Berikut merupakan detail dari *function* ``alertHistoryEmpty()`` untuk menampilkan pesan peringatan data histori kosong.
 
 .. code-block:: kotlin
 
