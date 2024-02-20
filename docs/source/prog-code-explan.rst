@@ -2426,7 +2426,169 @@ berhasil *bulk order*.
 
 *Bulk Order History*
 -------
+*Bulk order history* akan menampilkan semua daftar *order* reksadana yang berahasil dilakukan pada proses *bulk order*.
+Semua proses untuk menampilkan histori *bulk order* terdapat di *BulkOrderHistory Class* dan disimpan pada *file* ``bulkorderhistory.kt``.
+Setelah menentukan tanggal, lanjut menekan tombol *submit* dan akan menajalankan *function* ``getOrderHistory()``
+seperti kode dibawah ini.
 
+.. code-block:: kotlin
+
+    class BulkOrderHistory: Fragment("${AppProperties.appName} - Bulk Order Dealer History")  {
+        //other code...
+        private fun getOrderHistory() {
+            val validator = Validator()
+                .rule(frgDateRange.getStartDate() != null, "Start date is required.")
+                .rule(frgDateRange.getEndDate() != null, "End date is required.")
+                .rule(frgDateRange.isValidDate(), "Start date cannot be greater than end date.")
+                .validate()
+            if (!validator.isValid()) {
+                Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+                return
+            }
+
+            val dealer = GlobalState.session.userId
+            val startDate = frgDateRange.getStartDate()?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            val endDate =  frgDateRange.getEndDate()?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+            frgLoader.openModal(
+                stageStyle = StageStyle.TRANSPARENT,
+                modality = Modality.APPLICATION_MODAL,
+                escapeClosesWindow = false,
+                resizable = false,
+                owner = this@BulkOrderHistory.currentWindow
+            )
+
+            val task = runAsync {
+                WebServiceData.historyTransactionByDealer(dealer, startDate.toString(), endDate.toString())
+            }
+
+            task.setOnSucceeded {
+                val historyTransactions = task.value
+
+                historyTransactions.sortByDescending { it.transactionDate }
+                historyItems.setAll(historyTransactions)
+                frgLoader.close()
+
+                if (historyTransactions.isEmpty()) {
+                    alertHistoryEmpty()
+                }
+            }
+
+            task.setOnFailed {
+                val exception = task.exception
+                frgLoader.close()
+                Alerts.errors(exception.message)
+            }
+        }
+    }
+
+
+Pertama, melakukan validasi agar format tanggal yang diberikan sesuai tidak ada yang bermasalah.
+
+.. code-block:: kotlin
+
+    val validator = Validator()
+        .rule(frgDateRange.getStartDate() != null, "Start date is required.")
+        .rule(frgDateRange.getEndDate() != null, "End date is required.")
+        .rule(frgDateRange.isValidDate(), "Start date cannot be greater than end date.")
+        .validate()
+    if (!validator.isValid()) {
+        Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+        return
+    }
+
+
+Selanjutnya, menentukan beberapa *variable* dan menampilkan *loader indicator* pada layar.
+
+.. code-block:: kotlin
+
+    val dealer = GlobalState.session.userId
+    val startDate = frgDateRange.getStartDate()?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+    val endDate =  frgDateRange.getEndDate()?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+    frgLoader.openModal(
+        stageStyle = StageStyle.TRANSPARENT,
+        modality = Modality.APPLICATION_MODAL,
+        escapeClosesWindow = false,
+        resizable = false,
+        owner = this@BulkOrderHistory.currentWindow
+    )
+
+
+*Request history transaction* untuk mendapatkan data *history* yang *bulk order* nya saja dari *server*.
+
+.. code-block:: kotlin
+
+    val task = runAsync {
+        WebServiceData.historyTransactionByDealer(dealer, startDate.toString(), endDate.toString())
+    }
+
+
+Kalau gagal, akan menampilkan pesan *error* dan *loader indicator* dihilangkan dari layar.
+
+.. code-block:: kotlin
+
+    task.setOnFailed {
+        val exception = task.exception
+        frgLoader.close()
+        Alerts.errors(exception.message)
+    }
+
+
+Jika berhasil, data akan diproses terlebih dahulu sebelum ditampilkan pada layar.
+
+.. code-block:: kotlin
+
+    task.setOnSucceeded {
+        val historyTransactions = task.value
+
+        historyTransactions.sortByDescending { it.transactionDate }
+        historyItems.setAll(historyTransactions)
+        frgLoader.close()
+
+        if (historyTransactions.isEmpty()) {
+            alertHistoryEmpty()
+        }
+    }
+
+
+Data pertamakali akan di sorting secara *DESC* berdasarkan tanggal transaksi.
+
+.. code-block:: kotlin
+
+    historyTransactions.sortByDescending { it.transactionDate }
+
+
+Setelah itu, data akan ditampilkan pada tabel, dan *loader indicator* akan dihilangkan pada layar.
+
+.. code-block:: kotlin
+
+    historyItems.setAll(historyTransactions)
+    frgLoader.close()
+
+
+Terakhir, akan menampilkan pesan pemberitahuan jika histori *bulk order* kosong.
+
+.. code-block:: kotlin
+
+    if (historyTransactions.isEmpty()) {
+        alertHistoryEmpty()
+    }
+
+
+Berikut merupakan detail dari *function* ``alertHistoryEmpty()``.
+
+.. code-block:: kotlin
+
+    class BulkOrderHistory: Fragment("${AppProperties.appName} - Bulk Order Dealer History")  {
+        //other code...
+        private fun alertHistoryEmpty() {
+            val startDate = frgDateRange.getStartDate()?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            val endDate = frgDateRange.getEndDate()?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+
+            Alerts.warning("Sorry, there is no historical data from $startDate to $endDate.")
+        }
+    }
 
 
 .. autosummary::
