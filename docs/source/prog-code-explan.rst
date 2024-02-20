@@ -1442,7 +1442,7 @@ Bulk order merupakan fitur untuk dapat membeli banyak reksadana (*subscription*)
 ~~~~~~~
 
 Proses *download template* dilakukan dengan menekan tombol *Download Template* dan akan menjalankan *function*
-``downloadTemplate()``. *File* nya akan berformat *.xlsx*.
+``downloadTemplate()``. Dengan *file* yang berformat *.xlsx*.
 
 .. code-block:: kotlin
 
@@ -1479,7 +1479,7 @@ Menyimpan nama *file* dan *extention file* pada ``FileChooser()`` *Object*,
     fileChooser.initialFileName = filename
 
 
-Proses selanjutnya, menemtukan tempat penyimpanan *file* yang akan diunduh dengan menggunakan
+Proses selanjutnya, menentukan tempat penyimpanan *file* yang akan diunduh dengan menggunakan
 ``showSaveDialog(currentWindow)``. *Function* ini akan mengambil lokasi *file download* juga.
 Lalu dilakukan pengecekan apakah sudah ditentukan atau belum. Kalau sudah proses *download* akan di eksekusi
 ``writeExcel(file)``.
@@ -1494,7 +1494,7 @@ Lalu dilakukan pengecekan apakah sudah ditentukan atau belum. Kalau sudah proses
 
 
 *Function* ``writeExcel(file)`` masih berada pada *class* yang sama dan berguna untuk membuat *file excel* dengan
-template yang sudah ditentukan. *Template* yang dibuat berupa nama beberapa kolom diatarannya *Client Code*,
+template yang sudah ditentukan. *Template* yang dibuat terdiri dari beberapa kolom diatarannya *Client Code*,
 *IFUA No*, dan *Amount* (Nominal) yang berada pada kode
 ``columns.setAll("Client Code", "IFUA No", "Fund Code", "Amount (Nominal)")``.
 
@@ -1531,10 +1531,12 @@ template yang sudah ditentukan. *Template* yang dibuat berupa nama beberapa kolo
 *Upload File*
 ~~~~~~~
 
-Fitur *upload file* harus sesuai dengan *template* yang sudah diunduh, dengan format *.xlsx*. Proses ini dilakukan
-dengan menekan tombol *Upload* yang akan menjalankan *function* ``loadFileDialog()``.
+Fitur *upload file* hanya dapat menerima *file* dengan format *.xlsx*. *File* yang diunggah harus sesuai dengan
+*template* yang sudah diunduh. Proses ini dilakukan dengan menekan tombol *Upload* yang akan
+menjalankan *function* ``loadFileDialog()``.
 
 .. code-block:: kotlin
+
     class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
         //other code...
         private fun loadFileDialog() {
@@ -1596,6 +1598,7 @@ Selanjutnya dilakukan pengecekan apakah *file* kosong atau tidak. Kalau *file* k
 Jika *file* tidak kosong, selanjutnya  semua data akan direset ``resetDataAll()``.
 
 .. code-block:: kotlin
+
     class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
         //other code...
         private fun resetDataAll() {
@@ -1616,7 +1619,7 @@ Jika *file* tidak kosong, selanjutnya  semua data akan direset ``resetDataAll()`
     }
 
 
-Setelah itu, file akan dibaca oleh sistem dan hasilnya akan ditampilkan pada tabel di layar.
+Setelah itu, file akan dibaca oleh sistem dan hasilnya akan ditampilkan pada tabel.
 
 .. code-block:: kotlin
 
@@ -1626,7 +1629,7 @@ Setelah itu, file akan dibaca oleh sistem dan hasilnya akan ditampilkan pada tab
 
 
 Pada *Function* ``loadOrdersFromFile(filePath)`` ini akan menyimpan data pada *excel* ke tabel.
-Pertama hasil *read file excel* disimpan pada *variable* ```val bulkOrderList = bulkLoader.loadFile(filePath)``.
+Pertama, hasil *read file excel* disimpan pada *variable* ``val bulkOrderList = bulkLoader.loadFile(filePath)``.
 Setelah berhasil membaca *file* akan dipindahkan pada *variable* ``orderBookingList.setAll(bulkOrder)`` untuk ditampilkan
 pada tabel. Setelah pemindahan selesai, *variable* ``isUploaded`` *set* ke *true*, agar tombol *Process Inquiry Data*
 dapat diaktifkan.
@@ -1683,7 +1686,7 @@ Setelah pesan *error* ditampilkan, tombol *Upload* akan diaktifkan kembali.
 ~~~~~~~
 
 Fitur ini berfungsi untuk memvalidasi semua data yang sudah diunggah, sebelum semua data di *order*. Proses ini berjalan
-seleteh tombol *Process Inquiry Data* ditekan dan akan menjalankan *function* ``processInquiryData()``, seperti pada
+ketika tombol *Process Inquiry Data* ditekan dan akan menjalankan *function* ``processInquiryData()``, seperti pada
 kode dibawah ini.
 
 .. code-block:: kotlin
@@ -1856,6 +1859,7 @@ Jika *client* ada, akan menyimpan data *fullname* dan mengambil data *user profi
 Pengambilan dan penyimpanan data-data yang diambil dilakukan pada *function* ``setUserData(client.clientCode)``.
 
 .. code-block:: kotlin
+
     class BulkSubscription : Fragment("${AppProperties.appName} - Bulk Order Subscription Screen") {
         //other code...
         fun setUserData(custCode: String) {
@@ -1888,7 +1892,7 @@ Selanjutnya, menghapus angka *prefix* pada *clientCode*
 
 Setelah itu, cek apakah *clientCode* yang sudah diunggah sesuai dengan data *User Profiles*. Kalau tidak, pesan *error*
 akan ditampilkan. Perlu diingat *variable* ``userProfiles`` terisi setelah proses pengambilan data *user profile*
- sebelumnya berhasil, yang berada pada kode ``setUserData(client.clientCode)``.
+sebelumnya berhasil, yang berada pada kode ``setUserData(client.clientCode)``.
 
 .. code-block:: kotlin
 
@@ -1900,7 +1904,7 @@ akan ditampilkan. Perlu diingat *variable* ``userProfiles`` terisi setelah prose
     }
 
 
-Setelah user dicek, akan *request inquiry transaction*.
+Setelah user dicek, akan melakukan *request inquiry transaction*.
 
 .. code-block:: kotlin
 
@@ -1916,7 +1920,7 @@ Setelah user dicek, akan *request inquiry transaction*.
     val inquiryTransaction = runBlocking { WebServiceData.inquiryTransaction(inquiry) }
 
 
-Kode selanjutnya, akan menyimpan data *inquiry transaction* yang sudah diambil, dan jika gagal akan menampilkan pesan
+Kode selanjutnya akan menyimpan data *inquiry transaction* yang sudah diambil, dan jika gagal akan menampilkan pesan
 *error*.
 
 .. code-block:: kotlin
@@ -1949,6 +1953,7 @@ Kode selanjutnya, akan menyimpan data *inquiry transaction* yang sudah diambil, 
 Terakhir, kode untuk menyimpan pembaharuan data ``orderBookingList``.
 
 .. code-block:: kotlin
+
     orderBookingList.map { order ->
         //other code...
         order
@@ -1975,17 +1980,17 @@ Setelah semua pengecekan data selesai, lanjutkan proses pada *block* ``ui { bulk
 
 
 Pertama, *update* data ``orderBookingList`` yang sudah diubah sebelumnya ``orderBookingList.setAll(bulkOrder)``.
-Lalu, memvalidasi *cash on hand* dengan menggunakan *function* ``validateCashOnHand()``. *Update checkbox* setiap baris,
-lalu *update summary total section*. Tidak lupa untuk mengganti *value* dari ``isProcessInquiryClicked`` menjadi *true,
-dan *loader indicator* dihilangkan.
+Lalu, memvalidasi *cash on hand* dengan menggunakan *function* ``validateCashOnHand()``.
+*Update checkbox toggle checked all* ``updateCheckedAllStatus()``, lalu *update summary total section*.
+Tidak lupa untuk mengganti *value* dari ``isProcessInquiryClicked`` menjadi *true*, dan *loader indicator* dihilangkan.
 
 
 Berikut merupakan penjelasan lebih detail mengenai beberapa *functions* yang berda pada *block* ``ui { bulkOrder -> ...}``.
 
 #. *Function validateCashOnHand()*
     Fungsi ini digunakan agar dapat memvalidasi *cash on hand* untuk setiap *client* dari setiap reksadana yang akan dibeli.
-    Mengenai apakah jumah *cash* yang dimiliki *client* memadai untuk membeli reksadana atau tidak. Fungsi ini juga
-    yang akan mengganti status dari *Unprocessed* menjadi *Ready for Processing*, agar reksadana dapat dibeli.
+    Apakah jumlah *cash* yang dimiliki *client* memadai untuk membeli reksadana atau tidak. Fungsi ini juga
+    yang akan mengganti status dari *Unprocessed* menjadi *Ready for Processing*.
 
     .. code-block:: kotlin
 
@@ -2029,7 +2034,7 @@ Berikut merupakan penjelasan lebih detail mengenai beberapa *functions* yang ber
 
 
 #. *Function updateCheckedAllStatus()*
-    *function* ``updateCheckedAllStatus()`` akan menceklis *checkbox toggle checked all*.
+    *Function* ``updateCheckedAllStatus()`` akan menceklis *checkbox toggle checked all*.
 
 
     .. code-block:: kotlin
@@ -2069,6 +2074,7 @@ dan menyimpan detail *error* pada *logger*.
 
 
 .. code-block:: kotlin
+
         try {
             //other code...
         }
@@ -2087,7 +2093,7 @@ dan menyimpan detail *error* pada *logger*.
 *Execute Bulk Order*
 ~~~~~~~
 
-Pada proses ini akan membeli semua reksadana yang sudah diceklist oleh *user*. Akan berjalan ketika tombol *Execute*
+Pada proses ini akan membeli semua reksadana yang sudah diceklis oleh *user*. Akan berjalan ketika tombol *Execute*
 ditekan dan akan menjalankan *function* ``executeBulkOrder()``.
 
 
@@ -2209,7 +2215,7 @@ ditekan dan akan menjalankan *function* ``executeBulkOrder()``.
     }
 
 
-Pertama, melakukan validasi apakah data sudah ada yang dipilih atau belum
+Pertama, melakukan validasi apakah data sudah ada yang dipilih atau belum.
 
 .. code-block:: kotlin
 
@@ -2319,9 +2325,9 @@ ke layar.
     }
 
 
-Jika berhasil, status akan menjadi *Processed* yang menandakan *bulk order* berhasil dilakukan. Jika terdapat *error*
+Jika berhasil, status akan menjadi *Processed* yang menandakan *bulk order* berhasil dilakukan. Jika terdapat *error*,
 akan langsung mengubah status menjadi *Unprocessed* dan pesannya ditampilkan pada layar,
-yang berada pada *block* ``catch (e: Exception) {...}``. Terakhir *checkbbox* akan *unchecked* dan *disabled*.
+yang berada pada *block* ``catch (e: Exception) {...}``. Terakhir, *checkbbox* akan *unchecked* dan *disabled*.
 
 .. code-block:: kotlin
 
@@ -2402,7 +2408,7 @@ pesan error pada layar dan *loader indicator* dihilangkan.
 
 Kalau berhasil, data jumlah *checkbox* yang sudah diceklis akan dihapus ``checkedList.clear()``. *Cash on hand* akan
 divalidasi lagi, *toggle checkbox all* akan di *uncheck* dan *summary section* diperbaharui. Detail dari setiap *functions*
-bisa dilihat pada *section* *Process Inquiry Data*. Terakhir *loader indicator* akan dihilangkan dan menampilkan pesan
+bisa dilihat pada *section* *Process Inquiry Data*. Terakhir, *loader indicator* akan dihilangkan dan menampilkan pesan
 berhasil *bulk order*.
 
 
