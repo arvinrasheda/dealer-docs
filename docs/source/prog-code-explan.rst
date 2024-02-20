@@ -6,24 +6,399 @@ Penjelasan Kode Program APERD Dealer Desktop
 -------
 
 penjelasan bagian layar ini itu apa....
+*Mutual fund sceeen* merupakan layar pertama yang dibuka sebelum proses *subcription*, *redemption* dan *switching*
+dapat dilakukan. Setelah layar terbuka, hal pertama yang harus dilakukan yaitu menentukan *client*. *Client* dipilih
+untuk menampilkan data yang berada pada setiap *tab* (*Product List*, *Portfolio List*, *Transaction History*).
+Semua kode program untuk setiap *tab* terdapat pada ``MutualFundScreen Class`` yang berada pada *file* ``mutualfund.kt``.
 
 
+Berikut merupakan detail mengenai kode program dari setiap tab pada layar *mutual fund*.
 
-Penjelasan mengambil client dulu.....
-
-
-dibawah ini ngejelasan setiap tab nya gitu....
-
-*Product List*
+*Product List dan Portfolio List*
 ~~~~~~~
 
+Data *product list* dan *portfolio list* akan ditampilkan ketika *client* sudah dipilih, seperti pada kode dibawah ini.
 
-*Portfolio  List*
+.. code-block:: kotlin
+
+    class MutualFundScreen: Fragment("${AppProperties.appName} - Dealer Screen")  {
+        //other code...
+        init {
+            //other code...
+            subscribe<EVT_SELECTED_CLIENT_APERD_CHANGE> {
+                clearHistory() // for clear history, we will discuss later
+                updateProductAndPotofolioTable()
+            }
+        }
+    }
+
+Seperti yang dilihat pada kode di atas, terdapat sebuah *event* yang akan berfungsi ketika *client* sudah dipilih
+``subscribe<EVT_SELECTED_CLIENT_APERD_CHANGE> {...}``. Proses pengambilan data *product* dan *portfolio* berada pada
+*function* ``updateProductAndPotofolioTable()``.
+
+.. code-block:: kotlin
+
+    class MutualFundScreen: Fragment("${AppProperties.appName} - Dealer Screen")  {
+        //other code...
+        private fun updateProductAndPotofolioTable() {
+            clearPortofolio()
+            clearPortofolioInfo()
+            setLabelColor()
+
+            clearProduct()
+
+            if (!validateClientIsSelected()) {
+                return
+            }
+
+            getPortofolio { portofolios, exceptionMsg ->
+                if (portofolios != null) {
+                    portofolioItems.setAll(portofolios)
+                    calculatePortofolioInfo()
+                    setLabelColor()
+                } else if (tabPortofolio.isSelected) {
+                    Alerts.warning("Portofolio data: $exceptionMsg")
+                }
+            }
+
+            getMutualFundList(1, 9999) {
+                productItems.setAll(it)
+            }
+        }
+    }
+
+
+Pertama, akan mereset data *portfolio* dan *product*.
+
+.. code-block:: kotlin
+
+    clearPortofolio()
+    clearPortofolioInfo()
+    setLabelColor()
+
+    clearProduct()
+
+
+.. code-block:: kotlin
+
+    class MutualFundScreen: Fragment("${AppProperties.appName} - Dealer Screen")  {
+        //other code...
+        private fun clearPortofolio() {
+            portofolioItems.clear()
+        }
+
+        private fun clearPortofolioInfo() {
+            totalInvestment.set(0.0)
+            totalInvestmentLabel.set("0")
+            totalPortofolio.set(0.0)
+            totalPortofolioLabel.set("0")
+            totalProfit.set(0.0)
+            totalProfitLabel.set("0")
+            totalProfitPct.set(0.0)
+            totalProfitPctLabel.set("0.0%")
+        }
+
+        private fun setLabelColor() {
+            totalProfitLabelComponent.textFillProperty()
+                .bind(Colors.fundProfitColor(totalProfitPct.value).toProperty())
+
+            totalProfitPctLabelComponent.textFillProperty()
+                .bind(Colors.fundProfitColor(totalProfitPct.value).toProperty())
+        }
+
+        private fun clearProduct() {
+            productItems.clear()
+        }
+    }
+
+
+Selanjutnya, melakukan validasi apakah *client* sudah dipilih atau belum. Kalau belum dipilih, proses akan diberhentikan.
+
+.. code-block:: kotlin
+
+    if (!validateClientIsSelected()) {
+        return
+    }
+
+
+.. code-block:: kotlin
+
+    class MutualFundScreen: Fragment("${AppProperties.appName} - Dealer Screen")  {
+        //other code...
+        private fun validateClientIsSelected(): Boolean {
+            val validator = Validator()
+                .rule(GlobalState.clientsAperdState.selectedClient != null, Constant.NO_CLIENT_SELECTED)
+                .validate()
+
+            if (!validator.isValid()) {
+                Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+                return false
+            }
+
+            return true
+        }
+    }
+
+
+Proses selanjutnya yaitu mengambil dan menampilkan data *portfolio*.
+
+.. code-block:: kotlin
+
+    getPortofolio { portofolios, exceptionMsg ->
+        if (portofolios != null) {
+            portofolioItems.setAll(portofolios)
+            calculatePortofolioInfo()
+            setLabelColor()
+        } else if (tabPortofolio.isSelected) {
+            Alerts.warning("Portofolio data: $exceptionMsg")
+        }
+    }
+
+*Function* di atas memiliki *callback function* agar dapat menangani *response* gagal dan berhasil *request portfolio data*.
+Kalau gagal akan menampilkan pesan *warning* hanya ketika *tab portfolio list* dibuka
+``else if (tabPortofolio.isSelected) {...}``. Sedangkan kalau berhasil data *portfolio* akan ditampilkan pada layar.
+Berikut merupakan isi dari *function* ``getPortofolio(cb: (portofolioItems: List<FundPortofolioItem>?, exceptionMsg: String?) -> Unit)``.
+
+.. code-block:: kotlin
+
+    class MutualFundScreen: Fragment("${AppProperties.appName} - Dealer Screen")  {
+        //other code...
+        private fun getPortofolio(cb: (portofolioItems: List<FundPortofolioItem>?, exceptionMsg: String?) -> Unit) {
+            val sid = GlobalState.clientsAperdState.selectedClient!!.sid
+            if (sid != null) {
+                val task = runAsync {
+                    WebServiceData.portofolios(sid)
+                }
+
+                task.setOnSucceeded {
+                    cb(task.value, null)
+                }
+
+                task.setOnFailed {
+                    cb(null, task.exception.message)
+                }
+            } else {
+                Alerts.warning(MSG_SID_NULL)
+                return
+            }
+        }
+    }
+
+
+Terakhir yaitu mengambil data *product mutual fund*.
+
+.. code-block:: kotlin
+
+    getMutualFundList(1, 9999) {
+        productItems.setAll(it)
+    }
+
+
+*Function* di atas juga menggunakan *callback function* untuk menghandle sukses *request get mutual fund list*.
+Berikut merupakan isi dari *function* ``getMutualFundList(offset: Int, limit: Long, onSuccess: (products: List<MutualFundItem>) -> Unit)``.
+
+.. code-block:: kotlin
+
+    class MutualFundScreen: Fragment("${AppProperties.appName} - Dealer Screen")  {
+        //other code...
+        private fun getMutualFundList(offset: Int, limit: Long, onSuccess: (products: List<MutualFundItem>) -> Unit) {
+            val task = runAsync {
+                WebServiceData.fundList(offset, limit)
+            }
+
+            task.setOnSucceeded {
+                onSuccess(task.value)
+            }
+
+            task.setOnFailed {
+                val exception = task.exception
+                Alerts.errors("Product list data: " + exception.message)
+            }
+        }
+    }
+
+
+*History Transaction*
 ~~~~~~~
 
+*Tab history transaction* menampilkan semua transaksi *mutual fund* yang berhasil dilakukan.
+riwayat dapat ditampilkan dengan menentukan tanggal awal dan akhir yang sesuai.
+Terakhir, menekan tombol *submit* dan akan menjalankan *function* ``getOrderHistory()``, seperti kode dibawah ini.
 
-*Transaction History*
-~~~~~~~
+.. code-block:: kotlin
+
+    class MutualFundScreen: Fragment("${AppProperties.appName} - Dealer Screen")  {
+        //other code...
+        private fun getOrderHistory() {
+            val validator = Validator()
+                .rule(GlobalState.clientsAperdState.selectedClient != null, Constant.NO_CLIENT_SELECTED)
+                .rule(frgDateRange.getStartDate() != null, "Start date is required.")
+                .rule(frgDateRange.getEndDate() != null, "End date is required.")
+                .rule(frgDateRange.isValidDate(), "Start date cannot be greater than end date.")
+                .validate()
+            if (!validator.isValid()) {
+                Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+                return
+            }
+
+            val sid = GlobalState.clientsAperdState.selectedClient!!.sid
+            val startDate = frgDateRange.getStartDate()?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            val endDate =  frgDateRange.getEndDate()?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+            frgLoader.openModal(
+                stageStyle = StageStyle.TRANSPARENT,
+                modality = Modality.APPLICATION_MODAL,
+                escapeClosesWindow = false,
+                resizable = false,
+                owner = this@MutualFundScreen.currentWindow
+            )
+
+            clearHistory()
+
+            val task = runAsync {
+                WebServiceData.historyTransaction(sid, startDate.toString(), endDate.toString())
+            }
+
+            task.setOnSucceeded {
+                val historyTransactions = task.value
+
+                historyTransactions.sortByDescending { it.transactionDate }
+                historyItems.setAll(historyTransactions)
+                frgLoader.close()
+
+                if (historyTransactions.isEmpty()) {
+                    alertHistoryEmpty()
+                }
+            }
+
+            task.setOnFailed {
+                val exception = task.exception
+                frgLoader.close()
+                exception.message?.let { string -> Alerts.warning(string) }
+            }
+        }
+    }
+
+
+
+Pertama, melakukan validasi agar format tanggal yang diberikan sesuai, tidak ada yang bermasalah.
+
+.. code-block:: kotlin
+
+    val validator = Validator()
+        .rule(frgDateRange.getStartDate() != null, "Start date is required.")
+        .rule(frgDateRange.getEndDate() != null, "End date is required.")
+        .rule(frgDateRange.isValidDate(), "Start date cannot be greater than end date.")
+        .validate()
+    if (!validator.isValid()) {
+        Alerts.warning(validator.getErrorMessages().joinToString(separator = "\n"))
+        return
+    }
+
+
+Selanjutnya, menentukan beberapa *variable* dan menampilkan *loader indicator* pada layar.
+
+.. code-block:: kotlin
+
+    val sid = GlobalState.clientsAperdState.selectedClient!!.sid
+    val startDate = frgDateRange.getStartDate()?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+    val endDate =  frgDateRange.getEndDate()?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+    frgLoader.openModal(
+        stageStyle = StageStyle.TRANSPARENT,
+        modality = Modality.APPLICATION_MODAL,
+        escapeClosesWindow = false,
+        resizable = false,
+        owner = this@MutualFundScreen.currentWindow
+    )
+
+
+Menghapus *history transaction* dengan ``clearHistory()``. Dengan detail dari *function* ini sebagai berikut.
+
+.. code-block:: kotlin
+
+    class MutualFundScreen: Fragment("${AppProperties.appName} - Dealer Screen")  {
+        //other code...
+        private fun clearHistory() {
+            historyItems.clear()
+        }
+    }
+
+
+*Request history transaction* untuk mendapatkan data *history* yang *bulk order* nya saja dari *server*.
+
+.. code-block:: kotlin
+
+    val task = runAsync {
+        WebServiceData.historyTransaction(sid, startDate.toString(), endDate.toString())
+    }
+
+
+Kalau gagal, akan menampilkan pesan *error* dan *loader indicator* dihilangkan dari layar.
+
+.. code-block:: kotlin
+
+    task.setOnFailed {
+        val exception = task.exception
+        frgLoader.close()
+        exception.message?.let { string -> Alerts.warning(string) }
+    }
+
+
+Jika berhasil, data akan diproses terlebih dahulu sebelum ditampilkan pada layar.
+
+.. code-block:: kotlin
+
+    task.setOnSucceeded {
+        val historyTransactions = task.value
+
+        historyTransactions.sortByDescending { it.transactionDate }
+        historyItems.setAll(historyTransactions)
+        frgLoader.close()
+
+        if (historyTransactions.isEmpty()) {
+            alertHistoryEmpty()
+        }
+    }
+
+
+Data pertama kali akan di *sorting* secara *DESC* berdasarkan tanggal transaksi.
+
+.. code-block:: kotlin
+
+    historyTransactions.sortByDescending { it.transactionDate }
+
+
+Setelah itu, data akan ditampilkan pada tabel, dan *loader indicator* akan dihilangkan pada layar.
+
+.. code-block:: kotlin
+
+    historyItems.setAll(historyTransactions)
+    frgLoader.close()
+
+
+Terakhir, akan menampilkan pesan pemberitahuan jika riwayat *bulk order* kosong.
+
+.. code-block:: kotlin
+
+    if (historyTransactions.isEmpty()) {
+        alertHistoryEmpty()
+    }
+
+
+Berikut merupakan detail dari *function* ``alertHistoryEmpty()`` untuk menampilkan pesan peringatan data riwayat kosong.
+
+.. code-block:: kotlin
+
+    class MutualFundScreen: Fragment("${AppProperties.appName} - Dealer Screen")  {
+        //other code...
+        private fun alertHistoryEmpty() {
+            val startDate = frgDateRange.getStartDate()?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            val endDate = frgDateRange.getEndDate()?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+
+            Alerts.warning("Sorry, there is no historical data from $startDate to $endDate.")
+        }
+    }
 
 
 *Subscription*
@@ -2434,8 +2809,8 @@ berhasil *bulk order*.
 *Bulk Order History*
 -------
 *Bulk order history* menampilkan semua daftar *order* reksadana yang berhasil dilakukan pada *bulk order*.
-Semua proses untuk menampilkan histori *bulk order* terdapat di ``BulkOrderHistory Class``
-dan disimpan pada *file* ``bulkorderhistory.kt``. Histori dapat ditampilkan dengan menentukan tanggal awal dan akhir
+Semua proses untuk menampilkan riwayat *bulk order* terdapat di ``BulkOrderHistory Class``
+dan disimpan pada *file* ``bulkorderhistory.kt``. riwayat dapat ditampilkan dengan menentukan tanggal awal dan akhir
 yang sesuai. Terakhir, menekan tombol *submit* dan akan menjalankan *function* ``getOrderHistory()``,
 seperti kode dibawah ini.
 
@@ -2560,7 +2935,7 @@ Jika berhasil, data akan diproses terlebih dahulu sebelum ditampilkan pada layar
     }
 
 
-Data pertama kali akan di sorting secara *DESC* berdasarkan tanggal transaksi.
+Data pertama kali akan di *sorting* secara *DESC* berdasarkan tanggal transaksi.
 
 .. code-block:: kotlin
 
@@ -2575,7 +2950,7 @@ Setelah itu, data akan ditampilkan pada tabel, dan *loader indicator* akan dihil
     frgLoader.close()
 
 
-Terakhir, akan menampilkan pesan pemberitahuan jika histori *bulk order* kosong.
+Terakhir, akan menampilkan pesan pemberitahuan jika riwayat *bulk order* kosong.
 
 .. code-block:: kotlin
 
@@ -2584,7 +2959,7 @@ Terakhir, akan menampilkan pesan pemberitahuan jika histori *bulk order* kosong.
     }
 
 
-Berikut merupakan detail dari *function* ``alertHistoryEmpty()`` untuk menampilkan pesan peringatan data histori kosong.
+Berikut merupakan detail dari *function* ``alertHistoryEmpty()`` untuk menampilkan pesan peringatan data riwayat kosong.
 
 .. code-block:: kotlin
 
