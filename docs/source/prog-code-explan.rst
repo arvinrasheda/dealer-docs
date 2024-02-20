@@ -8,6 +8,7 @@ Penjelasan Kode Program APERD Dealer Desktop
 penjelasan bagian layar ini itu apa....
 
 
+
 Penjelasan mengambil client dulu.....
 
 
@@ -1835,7 +1836,6 @@ Setelah itu, akan menghapus data *cash balance* dan *unprocessed messages*
 
 Selanjutnya, kita akan melakukan pengecekan pada setiap data yang sudah diunggah. Pengecekan dilakukan satu persatu,
 yang berada pada block ``runAsync {...}``. Setelah pengecekan selesai, data pada tabel akan diperbaharui.
-:raw-html:`<br />`
 Pertama, status akan di isi *Unprocesed* dahulu.
 
 .. code-block:: kotlin
