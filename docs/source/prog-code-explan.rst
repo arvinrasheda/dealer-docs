@@ -1442,7 +1442,7 @@ Bulk order merupakan fitur untuk dapat membeli banyak reksadana (*subscription*)
 ~~~~~~~
 
 Proses *download template* dilakukan dengan menekan tombol *Download Template* dan akan menjalankan *function*
-``downloadTemplate()``. *File* yang akan *generate* berformat *.xlsx*.
+``downloadTemplate()``. *File* nya akan berformat *.xlsx*.
 
 .. code-block:: kotlin
 
@@ -2241,7 +2241,7 @@ melakukan *bulk order*
     }
 
 
-Setelah user menekan tombol *Yes* proses *bulk order* akan dilanjutkan, dan pertamakali akan menampilkan *loader indicator*.
+Setelah user menekan tombol *Yes* proses *bulk order* akan dilanjutkan, dan pertama kali akan menampilkan *loader indicator*.
 
 .. code-block:: kotlin
 
@@ -2553,7 +2553,7 @@ Jika berhasil, data akan diproses terlebih dahulu sebelum ditampilkan pada layar
     }
 
 
-Data pertamakali akan di sorting secara *DESC* berdasarkan tanggal transaksi.
+Data pertama kali akan di sorting secara *DESC* berdasarkan tanggal transaksi.
 
 .. code-block:: kotlin
 
