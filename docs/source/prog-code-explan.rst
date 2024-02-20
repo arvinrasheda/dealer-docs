@@ -158,6 +158,8 @@ Proses selanjutnya yaitu mengambil dan menampilkan data *portfolio*.
 *Function* di atas memiliki *callback function* agar dapat menangani *response* gagal dan berhasil *request portfolio data*.
 Kalau gagal akan menampilkan pesan *warning* hanya ketika *tab portfolio list* dibuka
 ``else if (tabPortofolio.isSelected) {...}``. Sedangkan kalau berhasil data *portfolio* akan ditampilkan pada layar.
+
+
 Berikut merupakan isi dari *function* ``getPortofolio(cb: (portofolioItems: List<FundPortofolioItem>?, exceptionMsg: String?) -> Unit)``.
 
 .. code-block:: kotlin
@@ -196,6 +198,8 @@ Terakhir yaitu mengambil data *product mutual fund*.
 
 
 *Function* di atas juga menggunakan *callback function* untuk menghandle sukses *request get mutual fund list*.
+
+
 Berikut merupakan isi dari *function* ``getMutualFundList(offset: Int, limit: Long, onSuccess: (products: List<MutualFundItem>) -> Unit)``.
 
 .. code-block:: kotlin
