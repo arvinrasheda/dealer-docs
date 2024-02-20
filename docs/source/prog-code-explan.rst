@@ -1442,7 +1442,7 @@ Bulk order merupakan fitur untuk dapat membeli banyak reksadana (*subscription*)
 ~~~~~~~
 
 Proses *download template* dilakukan dengan menekan tombol *Download Template* dan akan menjalankan *function*
-``downloadTemplate()``. Dengan *file* yang berformat *.xlsx*.
+``downloadTemplate()``. Dengan *file download* yang berformat *.xlsx*.
 
 .. code-block:: kotlin
 
@@ -1481,7 +1481,7 @@ Menyimpan nama *file* dan *extention file* pada ``FileChooser()`` *Object*,
 
 Proses selanjutnya, menentukan tempat penyimpanan *file* yang akan diunduh dengan menggunakan
 ``showSaveDialog(currentWindow)``. *Function* ini akan mengambil lokasi *file download* juga.
-Lalu dilakukan pengecekan apakah sudah ditentukan atau belum. Kalau sudah proses *download* akan di eksekusi
+Lalu dilakukan pengecekan apakah sudah ditentukan atau belum. Kalau sudah proses *download* akan dieksekusi
 ``writeExcel(file)``.
 
 
@@ -1494,7 +1494,7 @@ Lalu dilakukan pengecekan apakah sudah ditentukan atau belum. Kalau sudah proses
 
 
 *Function* ``writeExcel(file)`` masih berada pada *class* yang sama dan berguna untuk membuat *file excel* dengan
-template yang sudah ditentukan. *Template* yang dibuat terdiri dari beberapa kolom diatarannya *Client Code*,
+*template* yang sudah ditentukan. *Template* yang dibuat terdiri dari beberapa kolom diatarannya *Client Code*,
 *IFUA No*, dan *Amount* (Nominal) yang berada pada kode
 ``columns.setAll("Client Code", "IFUA No", "Fund Code", "Amount (Nominal)")``.
 
@@ -1834,7 +1834,8 @@ Setelah itu, akan menghapus data *cash balance* dan *unprocessed messages*
 
 
 Selanjutnya, kita akan melakukan pengecekan pada setiap data yang sudah diunggah. Pengecekan dilakukan satu persatu,
-yang berada pada block ``runAsync {...}``. Setelah pengecekan selesai data pada tabel akan diperbaharui.
+yang berada pada block ``runAsync {...}``. Setelah pengecekan selesai, data pada tabel akan diperbaharui.
+:raw-html:`<br />`
 Pertama, status akan di isi *Unprocesed* dahulu.
 
 .. code-block:: kotlin
@@ -1950,7 +1951,7 @@ Kode selanjutnya akan menyimpan data *inquiry transaction* yang sudah diambil, d
     }
 
 
-Terakhir, kode untuk menyimpan pembaharuan data ``orderBookingList``.
+Terakhir, kode ``order`` untuk menyimpan pembaharuan data ``orderBookingList``.
 
 .. code-block:: kotlin
 
